@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(npx supabase init --yes 2>&1 | Select-Object -Last 5; Get-ChildItem supabase -Name; Get-Content package.json)",
+      "PowerShell(npm pkg *)",
+      "PowerShell(npx vitest run supabase/tests 2>&1 | Select-Object -Last 40)",
+      "PowerShell(Get-ChildItem node_modules/@supabase/ssr/dist/main -Name | Select-Object -First 20; Select-String -Path node_modules/@supabase/ssr/dist/main/createServerClient.d.ts -Pattern \"getAll|setAll|export declare function\" | Select-Object -First 10 | ForEach-Object { $_.Line.Trim\\(\\) }; Select-String -Path node_modules/@supabase/ssr/package.json -Pattern '\"version\"')",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -Last 20; \"--- lint\"; npx eslint 2>&1 | Select-Object -Last 20; \"--- build\"; npx next build 2>&1 | Select-Object -Last 25)"
+    ]
+  }
+}
