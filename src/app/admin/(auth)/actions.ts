@@ -5,14 +5,13 @@ import { z } from "zod";
 import { publicEnv } from "@/lib/env";
 import { GENERIC_ERROR, logError, type ActionResult } from "@/lib/errors";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { safeAdminNext } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 
 const TOO_MANY = "Too many attempts. Please wait a few minutes and try again.";
 
-/** Only allow redirects back into the admin area (prevents open redirects). */
 function safeAdminPath(next: FormDataEntryValue | null): string {
-  const s = typeof next === "string" ? next : "";
-  return /^\/admin(\/[\w\-/?=&%.]*)?$/.test(s) && !s.startsWith("/admin/login") ? s : "/admin";
+  return safeAdminNext(typeof next === "string" ? next : null);
 }
 
 const signInSchema = z.object({

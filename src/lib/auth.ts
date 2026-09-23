@@ -57,9 +57,3 @@ export async function requireStaff(opts: { adminOnly?: boolean } = {}): Promise<
   if (opts.adminOnly && user.role !== "admin") throw new AuthorizationError();
   return user;
 }
-
-export async function requireUserPage(next = "/account"): Promise<CurrentUser> {
-  const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
-  return user;
-}

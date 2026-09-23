@@ -8,6 +8,7 @@ import { TAGS } from "@/lib/cache-tags";
 import { failure, type ActionResult } from "@/lib/errors";
 import { parseMoneyInput } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
+import { ensureInvited } from "@/lib/team";
 
 async function requireAdmin(context: string): Promise<{ ok: false; error: string } | null> {
   try {
@@ -172,11 +173,26 @@ export async function addTeamMember(_prev: ActionResult | null, formData: FormDa
   const parsed = teamSchema.safeParse({ email: formData.get("email"), role: formData.get("role") });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request." };
 
+  let invited = false;
+  try {
+    ({ invited } = await ensureInvited(parsed.data.email));
+  } catch (err) {
+    return failure("addTeamMember.invite", err);
+  }
+
+  // The role is granted through the admin-checked database function.
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_role_by_email", { p_email: parsed.data.email, p_role: parsed.data.role });
   if (error) return failure("addTeamMember", error);
   refresh();
-  return { ok: true, data: undefined, message: `${parsed.data.email} is now ${parsed.data.role === "admin" ? "an admin" : "staff"}.` };
+  const role = parsed.data.role === "admin" ? "an admin" : "staff";
+  return {
+    ok: true,
+    data: undefined,
+    message: invited
+      ? `Invitation sent to ${parsed.data.email}. They'll join as ${role} once they set a password.`
+      : `${parsed.data.email} is now ${role}.`,
+  };
 }
 
 const roleSchema = z.object({ user_id: z.uuid(), role: z.enum(["customer", "staff", "admin"]) });

@@ -214,14 +214,14 @@ export function AddTeamMemberForm() {
     <form action={action} className="space-y-3">
       <FormMessage result={result} />
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input name="email" type="email" required placeholder="their@email.com" aria-label="Email of existing account" className="sm:flex-1" />
+        <Input name="email" type="email" required placeholder="their@email.com" aria-label="Email address" className="sm:flex-1" />
         <Select name="role" defaultValue="staff" aria-label="Role" className="sm:w-32">
           <option value="staff">Staff</option>
           <option value="admin">Admin</option>
         </Select>
         <SubmitButton pendingText="Adding…">Give access</SubmitButton>
       </div>
-      <p className="text-xs text-muted">They need an account on your store first. Ask them to sign up, then add their email here.</p>
+      <p className="text-xs text-muted">New people get an email invitation to set their password.</p>
     </form>
   );
 }

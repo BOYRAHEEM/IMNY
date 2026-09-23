@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { logError } from "@/lib/errors";
+import { safeAdminNext } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -9,9 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const nextParam = searchParams.get("next") ?? "/";
-  // Relative paths only: never redirect off-site.
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  const next = safeAdminNext(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
@@ -20,6 +19,5 @@ export async function GET(request: NextRequest) {
     logError("auth.callback", error);
   }
 
-  const failTo = next.startsWith("/admin") ? "/admin/login?error=link" : "/login?error=link";
-  return NextResponse.redirect(`${origin}${failTo}`);
+  return NextResponse.redirect(`${origin}/admin/login?error=link`);
 }
