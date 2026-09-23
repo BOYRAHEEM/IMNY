@@ -8,6 +8,7 @@ import { TAGS } from "@/lib/cache-tags";
 import { failure, type ActionResult } from "@/lib/errors";
 import { parseMoneyInput } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateStore } from "@/lib/revalidate-store";
 import { ensureInvited } from "@/lib/team";
 
 async function requireAdmin(context: string): Promise<{ ok: false; error: string } | null> {
@@ -160,6 +161,13 @@ export async function deleteZone(id: string): Promise<ActionResult> {
   if (error) return failure("deleteZone", error);
   updateTag(TAGS.settings);
   redirect("/admin/settings?zone=deleted#delivery");
+}
+
+export async function refreshStorefront(): Promise<ActionResult> {
+  const denied = await requireAdmin("refreshStorefront");
+  if (denied) return denied;
+  revalidateStore();
+  return { ok: true, data: undefined, message: "The store now shows the latest data." };
 }
 
 const teamSchema = z.object({

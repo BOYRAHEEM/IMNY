@@ -7,7 +7,7 @@ import { requireStaffPage } from "@/lib/auth";
 import { logError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
-import { AddTeamMemberForm, SettingsForm, TeamRoleForm, ZoneForm, type SettingsValues, type ZoneValues } from "./forms";
+import { AddTeamMemberForm, RefreshStoreForm, SettingsForm, TeamRoleForm, ZoneForm, type SettingsValues, type ZoneValues } from "./forms";
 
 export const metadata = { title: "Settings" };
 
@@ -124,6 +124,12 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               Staff can manage products, stock and orders. Only admins can change discounts, settings, the team, delete
               products or record refunds.
             </p>
+          </div>
+        </Panel>
+
+        <Panel title="Storefront">
+          <div className="p-4 sm:p-5">
+            <RefreshStoreForm />
           </div>
         </Panel>
       </div>

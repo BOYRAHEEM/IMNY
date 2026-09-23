@@ -66,7 +66,7 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
               ))}
             </ul>
           </div>
-          <div>
+          <div hidden={!settings.contact_email && !settings.contact_phone && !settings.whatsapp_number && social.length === 0}>
             <h2 className="mb-3 text-xs tracking-widest text-muted uppercase">Contact</h2>
             <ul className="space-y-2 text-sm">
               {settings.contact_email && (

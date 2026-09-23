@@ -6,7 +6,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { Checkbox, Field, FormMessage, Input, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { minorToInput } from "@/lib/money";
-import { addTeamMember, changeTeamRole, deleteZone, saveSettings, saveZone } from "./actions";
+import { addTeamMember, changeTeamRole, deleteZone, refreshStorefront, saveSettings, saveZone } from "./actions";
 
 export type SettingsValues = {
   store_name: string;
@@ -204,6 +204,22 @@ export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
             </Button>
           ))}
       </div>
+    </form>
+  );
+}
+
+export function RefreshStoreForm() {
+  const [result, action] = useActionState(refreshStorefront, null);
+  return (
+    <form action={action} className="space-y-3">
+      <FormMessage result={result} />
+      <p className="text-sm text-muted">
+        Changes made here in the dashboard show up straight away. If you ever edit data directly in Supabase, press this so
+        the store picks it up.
+      </p>
+      <SubmitButton variant="secondary" size="sm" pendingText="Refreshing…">
+        Refresh storefront
+      </SubmitButton>
     </form>
   );
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { cart } from "./cart-store";
@@ -219,58 +219,47 @@ export function ProductView({ name, currency, maxQuantity, options, variants, im
   );
 }
 
+/** One set of images: a swipeable strip on phones, a two-column grid from tablet up. */
 function Gallery({ images, name }: { images: ViewImage[]; name: string }) {
   const [index, setIndex] = useState(0);
-  const scroller = useRef<HTMLDivElement>(null);
 
   if (images.length === 0) {
     return <div className="flex aspect-[4/5] items-center justify-center bg-mist font-display text-2xl text-faint">{name}</div>;
   }
 
-  return (
-    <div>
-      {/* Phones: swipe */}
-      <div className="relative -mx-4 md:hidden">
-        <div
-          ref={scroller}
-          onScroll={(e) => {
-            const el = e.currentTarget;
-            setIndex(Math.round(el.scrollLeft / el.clientWidth));
-          }}
-          className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
-          aria-label={`${name} photos`}
-          role="region"
-        >
-          {images.map((img, i) => (
-            <div key={img.id} className="relative aspect-[4/5] w-full shrink-0 snap-center bg-mist">
-              <Image src={img.url} alt={img.alt} fill priority={i === 0} sizes="100vw" className="object-cover" />
-            </div>
-          ))}
-        </div>
-        {images.length > 1 && (
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5" aria-hidden>
-            {images.map((img, i) => (
-              <span key={img.id} className={cn("h-1 rounded-full transition-all", i === index ? "w-5 bg-ink" : "w-1.5 bg-ink/30")} />
-            ))}
-          </div>
-        )}
-      </div>
+  const wide = (i: number) => i === 0 && images.length % 2 === 1;
 
-      {/* Larger screens: grid */}
-      <div className="hidden gap-2 md:grid md:grid-cols-2">
+  return (
+    <div className="relative -mx-4 sm:-mx-6 md:mx-0">
+      <div
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          if (el.scrollWidth > el.clientWidth) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:grid md:grid-cols-2 md:gap-2 md:overflow-visible"
+        aria-label={`${name} photos`}
+        role="region"
+      >
         {images.map((img, i) => (
-          <div key={img.id} className={cn("relative aspect-[4/5] bg-mist", i === 0 && images.length % 2 === 1 && "col-span-2")}>
+          <div key={img.id} className={cn("relative aspect-[4/5] w-full shrink-0 snap-center bg-mist md:w-auto", wide(i) && "md:col-span-2")}>
             <Image
               src={img.url}
               alt={img.alt}
               fill
               priority={i === 0}
-              sizes={i === 0 && images.length % 2 === 1 ? "(min-width: 1280px) 720px, 58vw" : "(min-width: 1280px) 360px, 29vw"}
+              sizes={wide(i) ? "(min-width: 1280px) 720px, (min-width: 768px) 58vw, 100vw" : "(min-width: 1280px) 360px, (min-width: 768px) 29vw, 100vw"}
               className="object-cover"
             />
           </div>
         ))}
       </div>
+      {images.length > 1 && (
+        <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden" aria-hidden>
+          {images.map((img, i) => (
+            <span key={img.id} className={cn("h-1 rounded-full transition-all", i === index ? "w-5 bg-ink" : "w-1.5 bg-ink/30")} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
