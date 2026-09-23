@@ -136,6 +136,36 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          handled: boolean
+          handled_at: string | null
+          id: string
+          message: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          handled?: boolean
+          handled_at?: string | null
+          id?: string
+          message: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          handled?: boolean
+          handled_at?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -176,6 +206,7 @@ export type Database = {
       }
       delivery_zones: {
         Row: {
+          allow_cod: boolean
           created_at: string
           description: string | null
           estimated_days: string | null
@@ -188,6 +219,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_cod?: boolean
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -200,6 +232,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_cod?: boolean
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -409,6 +442,60 @@ export type Database = {
           },
         ]
       }
+      lookbook_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          height: number | null
+          id: string
+          label: string | null
+          position: number
+          storage_path: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          label?: string | null
+          position?: number
+          storage_path: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          label?: string | null
+          position?: number
+          storage_path?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -595,6 +682,7 @@ export type Database = {
           id: string
           order_number: string
           paid_at: string | null
+          payment_method: string
           payment_provider: string
           payment_reference: string
           payment_status: Database["public"]["Enums"]["payment_status"]
@@ -633,6 +721,7 @@ export type Database = {
           id?: string
           order_number: string
           paid_at?: string | null
+          payment_method?: string
           payment_provider: string
           payment_reference: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -671,6 +760,7 @@ export type Database = {
           id?: string
           order_number?: string
           paid_at?: string | null
+          payment_method?: string
           payment_provider?: string
           payment_reference?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -1071,6 +1161,7 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          about_image_path: string | null
           allow_guest_checkout: boolean
           announcement: string | null
           business_address: string | null
@@ -1078,7 +1169,9 @@ export type Database = {
           contact_phone: string | null
           currency: string
           free_delivery_over_minor: number | null
+          hero_image_path: string | null
           id: boolean
+          low_stock_badge_threshold: number
           low_stock_threshold: number
           max_quantity_per_item: number
           order_prefix: string
@@ -1092,6 +1185,7 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          about_image_path?: string | null
           allow_guest_checkout?: boolean
           announcement?: string | null
           business_address?: string | null
@@ -1099,7 +1193,9 @@ export type Database = {
           contact_phone?: string | null
           currency?: string
           free_delivery_over_minor?: number | null
+          hero_image_path?: string | null
           id?: boolean
+          low_stock_badge_threshold?: number
           low_stock_threshold?: number
           max_quantity_per_item?: number
           order_prefix?: string
@@ -1113,6 +1209,7 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          about_image_path?: string | null
           allow_guest_checkout?: boolean
           announcement?: string | null
           business_address?: string | null
@@ -1120,7 +1217,9 @@ export type Database = {
           contact_phone?: string | null
           currency?: string
           free_delivery_over_minor?: number | null
+          hero_image_path?: string | null
           id?: boolean
+          low_stock_badge_threshold?: number
           low_stock_threshold?: number
           max_quantity_per_item?: number
           order_prefix?: string
@@ -1208,6 +1307,10 @@ export type Database = {
         Args: { p_note?: string; p_order_id: string }
         Returns: undefined
       }
+      admin_record_cod_payment: {
+        Args: { p_note?: string; p_order_id: string }
+        Returns: undefined
+      }
       admin_resolve_attention: {
         Args: { p_note: string; p_order_id: string }
         Returns: undefined
@@ -1261,6 +1364,18 @@ export type Database = {
       }
       mark_order_payment_failed: {
         Args: { p_reference: string }
+        Returns: Json
+      }
+      place_cod_order: {
+        Args: {
+          p_access_token_hash: string
+          p_customer: Json
+          p_delivery_zone_id: string
+          p_discount_code: string
+          p_items: Json
+          p_payment_reference: string
+          p_shipping: Json
+        }
         Returns: Json
       }
       place_order: {
