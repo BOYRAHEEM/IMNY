@@ -11,7 +11,7 @@ import { formatDateTime } from "@/lib/format";
 import { catalogImageUrl } from "@/lib/images";
 import { formatMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
-import { NoteForm, RefundForm, ResolveForm, StatusPanel } from "./order-actions";
+import { CashPaymentForm, NoteForm, RefundForm, ResolveForm, StatusPanel } from "./order-actions";
 
 export const metadata = { title: "Order" };
 
@@ -49,7 +49,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
         back={{ href: "/admin/orders", label: "Orders" }}
         actions={
           <div className="flex flex-wrap gap-1.5">
-            <PaymentStatusBadge status={order.payment_status} />
+            <PaymentStatusBadge status={order.payment_status} method={order.payment_method} />
             <OrderStatusBadge status={order.status} />
           </div>
         }
@@ -156,6 +156,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
               orderId={order.id}
               status={order.status}
               paymentStatus={order.payment_status}
+              paymentMethod={order.payment_method}
               stockCommitted={order.stock_state === "committed"}
             />
           </Panel>
@@ -198,12 +199,17 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
           <Panel title="Payment">
             <dl className="space-y-1.5 p-4 text-sm sm:p-5">
-              <Row label="Status" value={<PaymentStatusBadge status={order.payment_status} />} />
-              <Row label="Provider" value={<span className="capitalize">{order.payment_provider}</span>} />
+              <Row label="Status" value={<PaymentStatusBadge status={order.payment_status} method={order.payment_method} />} />
+              <Row label="Method" value={order.payment_method === "cod" ? "Cash on delivery" : <span className="capitalize">{order.payment_provider}</span>} />
               <Row label="Reference" value={<span className="font-mono text-xs break-all">{order.payment_reference}</span>} />
               {order.paid_at && <Row label="Paid" value={formatDateTime(order.paid_at)} />}
               {order.cancel_reason && <Row label="Cancelled" value={order.cancel_reason} />}
             </dl>
+            {order.payment_method === "cod" && order.payment_status === "pending" && order.status !== "cancelled" && (
+              <div className="border-t border-line p-4 sm:p-5">
+                <CashPaymentForm orderId={order.id} amount={money(order.total_minor)} />
+              </div>
+            )}
             {user.role === "admin" && order.payment_status === "paid" && (
               <div className="border-t border-line p-4 sm:p-5">
                 <RefundForm orderId={order.id} />

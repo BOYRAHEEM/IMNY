@@ -5,7 +5,7 @@ import { orderStatusLabel } from "@/components/admin/status";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, FormMessage, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { addOrderNote, markOrderRefunded, resolveAttention, updateOrderStatus } from "../actions";
+import { addOrderNote, markOrderRefunded, recordCashPayment, resolveAttention, updateOrderStatus } from "../actions";
 
 const FLOW = ["pending", "confirmed", "processing", "ready", "shipped", "delivered"] as const;
 
@@ -13,11 +13,13 @@ export function StatusPanel({
   orderId,
   status,
   paymentStatus,
+  paymentMethod,
   stockCommitted,
 }: {
   orderId: string;
   status: string;
   paymentStatus: string;
+  paymentMethod: string;
   stockCommitted: boolean;
 }) {
   const [result, action] = useActionState(updateOrderStatus, null);
@@ -32,7 +34,8 @@ export function StatusPanel({
   }
 
   const next = FLOW.slice(FLOW.indexOf(status as (typeof FLOW)[number]) + 1);
-  const paid = paymentStatus === "paid";
+  // Pay-on-delivery orders can be fulfilled before the cash is collected.
+  const paid = paymentStatus === "paid" || (paymentMethod === "cod" && paymentStatus === "pending");
 
   return (
     <div className="space-y-4 p-4 sm:p-5">
@@ -109,6 +112,33 @@ export function NoteForm({ orderId }: { orderId: string }) {
       <SubmitButton variant="secondary" size="sm" pendingText="Adding…">
         Add note
       </SubmitButton>
+    </form>
+  );
+}
+
+export function CashPaymentForm({ orderId, amount }: { orderId: string; amount: string }) {
+  const [result, action] = useActionState(recordCashPayment, null);
+  const [open, setOpen] = useState(false);
+  if (!open)
+    return (
+      <Button size="sm" onClick={() => setOpen(true)}>
+        Record cash received
+      </Button>
+    );
+  return (
+    <form action={action} className="space-y-2">
+      <FormMessage result={result} />
+      <input type="hidden" name="order_id" value={orderId} />
+      <p className="text-sm text-muted">Confirm {amount} in cash was collected for this order.</p>
+      <Textarea name="note" maxLength={2000} rows={2} placeholder="e.g. Collected by rider Kofi" aria-label="Note" className="min-h-16" />
+      <div className="flex gap-2">
+        <SubmitButton size="sm" pendingText="Saving…">
+          Confirm cash received
+        </SubmitButton>
+        <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

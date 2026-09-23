@@ -21,6 +21,7 @@ const VIEWS = [
   { key: "to-fulfil", label: "To fulfil" },
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
+  { key: "cash-due", label: "Cash due" },
   { key: "unpaid", label: "Awaiting payment" },
   { key: "cancelled", label: "Cancelled" },
 ] as const;
@@ -39,16 +40,20 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   let query = supabase
     .from("orders")
     .select(
-      "id, order_number, shipping_name, email, total_minor, currency, status, payment_status, requires_attention, created_at, order_items(quantity)",
+      "id, order_number, shipping_name, email, total_minor, currency, status, payment_status, payment_method, requires_attention, created_at, order_items(quantity)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-  if (view === "to-fulfil") query = query.eq("payment_status", "paid").in("status", ["confirmed", "processing", "ready"]);
+  if (view === "to-fulfil")
+    query = query
+      .in("status", ["confirmed", "processing", "ready"])
+      .or("payment_status.eq.paid,and(payment_method.eq.cod,payment_status.eq.pending)");
   else if (view === "shipped") query = query.eq("status", "shipped");
   else if (view === "delivered") query = query.eq("status", "delivered");
-  else if (view === "unpaid") query = query.eq("payment_status", "pending").neq("status", "cancelled");
+  else if (view === "cash-due") query = query.eq("payment_method", "cod").eq("payment_status", "pending").neq("status", "cancelled");
+  else if (view === "unpaid") query = query.eq("payment_method", "online").eq("payment_status", "pending").neq("status", "cancelled");
   else if (view === "cancelled") query = query.eq("status", "cancelled");
   if (attention) query = query.eq("requires_attention", true);
   if (customer) query = query.eq("customer_id", customer);
@@ -148,7 +153,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                     </span>
                     <span className="text-right text-xs text-muted lg:order-5 lg:text-sm">{formatDateTime(o.created_at)}</span>
                     <span className="col-span-2 flex flex-wrap gap-1.5 lg:order-4 lg:col-span-1">
-                      <PaymentStatusBadge status={o.payment_status} />
+                      <PaymentStatusBadge status={o.payment_status} method={o.payment_method} />
                       <OrderStatusBadge status={o.status} />
                     </span>
                   </Link>

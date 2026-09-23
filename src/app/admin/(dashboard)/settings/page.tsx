@@ -7,7 +7,10 @@ import { requireStaffPage } from "@/lib/auth";
 import { logError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
+import { resolveContent } from "@/content/site";
+import { catalogImageUrl } from "@/lib/images";
 import { AddTeamMemberForm, RefreshStoreForm, SettingsForm, TeamRoleForm, ZoneForm, type SettingsValues, type ZoneValues } from "./forms";
+import { ContentForm, SiteImageField } from "./site-forms";
 
 export const metadata = { title: "Settings" };
 
@@ -27,6 +30,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   }
 
   const settings = settingsRes.data as SettingsValues | null;
+  const settingsRow = settingsRes.data as { hero_image_path: string | null; about_image_path: string | null; content: unknown } | null;
   const zones = (zonesRes.data ?? []) as ZoneValues[];
   const team = teamRes.data ?? [];
   const editingZone = zoneParam && z.uuid().safeParse(zoneParam).success ? zones.find((zn) => zn.id === zoneParam) ?? null : null;
@@ -38,9 +42,32 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
 
       <div className="space-y-6">
         {settings ? (
-          <Panel title="Store">
-            <SettingsForm s={settings} />
-          </Panel>
+          <>
+            <Panel title="Store">
+              <SettingsForm s={settings} />
+            </Panel>
+            <Panel title="Homepage & about photos">
+              <div className="grid gap-6 p-4 sm:grid-cols-2 sm:p-5">
+                <SiteImageField
+                  field="hero_image_path"
+                  folder="hero"
+                  label="Homepage campaign photo"
+                  hint="Portrait (4:5) works best. Shown next to the headline."
+                  currentUrl={catalogImageUrl(settingsRow?.hero_image_path)}
+                />
+                <SiteImageField
+                  field="about_image_path"
+                  folder="about"
+                  label="About page photo"
+                  hint="Studio or behind-the-scenes shot, portrait."
+                  currentUrl={catalogImageUrl(settingsRow?.about_image_path)}
+                />
+              </div>
+            </Panel>
+            <Panel title="Page text">
+              <ContentForm content={resolveContent(settingsRow?.content)} />
+            </Panel>
+          </>
         ) : (
           <p role="alert" className="border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
             Settings couldn&apos;t be loaded. Refresh to try again.
@@ -83,6 +110,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
                           <p className="flex items-center gap-2 text-sm font-medium">
                             {zn.name}
                             {!zn.is_active && <Badge>Off</Badge>}
+                            {zn.allow_cod && <Badge tone="info">Pay on delivery</Badge>}
                           </p>
                           <p className="truncate text-xs text-muted">
                             {[zn.description, zn.estimated_days].filter(Boolean).join(" · ")}

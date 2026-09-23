@@ -3,9 +3,11 @@
 import { redirect } from "next/navigation";
 import { refresh, updateTag } from "next/cache";
 import { z } from "zod";
+import { CONTENT_FIELDS, DEFAULT_CONTENT } from "@/content/site";
 import { requireStaff } from "@/lib/auth";
 import { TAGS } from "@/lib/cache-tags";
-import { failure, type ActionResult } from "@/lib/errors";
+import { failure, logError, type ActionResult } from "@/lib/errors";
+import { CATALOG_BUCKET } from "@/lib/images";
 import { parseMoneyInput } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateStore } from "@/lib/revalidate-store";
@@ -58,13 +60,17 @@ const settingsSchema = z.object({
   contact_phone: text(32),
   whatsapp_number: text(32),
   business_address: text(300),
-  announcement: text(200),
-  order_prefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{1,6}$/, "Order prefix: 1-6 letters or numbers."),
+  announcement: text(300),
+  order_prefix: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z0-9]{1,6}-?$/, "Order prefix: 1-6 letters or numbers, optionally ending in a dash."),
   low_stock_threshold: z.coerce.number().int().min(0).max(1000),
+  low_stock_badge_threshold: z.coerce.number().int().min(0).max(1000),
   reservation_minutes: z.coerce.number().int().min(5, "Hold stock for at least 5 minutes.").max(240),
   max_quantity_per_item: z.coerce.number().int().min(1).max(100),
   free_delivery_over_minor: moneyOrNull,
-  allow_guest_checkout: z.boolean(),
   seo_title: text(120),
   seo_description: text(320),
   instagram: url,
@@ -82,11 +88,10 @@ export async function saveSettings(_prev: ActionResult | null, formData: FormDat
     ...Object.fromEntries(
       [
         "store_name", "tagline", "contact_email", "contact_phone", "whatsapp_number", "business_address", "announcement",
-        "order_prefix", "low_stock_threshold", "reservation_minutes", "max_quantity_per_item", "free_delivery_over_minor",
-        "seo_title", "seo_description", "instagram", "tiktok", "facebook", "x",
+        "order_prefix", "low_stock_threshold", "low_stock_badge_threshold", "reservation_minutes", "max_quantity_per_item",
+        "free_delivery_over_minor", "seo_title", "seo_description", "instagram", "tiktok", "facebook", "x",
       ].map((k) => [k, f(k)]),
     ),
-    allow_guest_checkout: formData.get("allow_guest_checkout") === "on",
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details and try again." };
 
@@ -121,6 +126,7 @@ const zoneSchema = z.object({
   estimated_days: text(40),
   sort_order: z.coerce.number().int().min(-1000).max(1000),
   is_active: z.boolean(),
+  allow_cod: z.boolean(),
 });
 
 export async function saveZone(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -137,6 +143,7 @@ export async function saveZone(_prev: ActionResult | null, formData: FormData): 
     estimated_days: f("estimated_days"),
     sort_order: f("sort_order") || 0,
     is_active: formData.get("is_active") === "on",
+    allow_cod: formData.get("allow_cod") === "on",
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details and try again." };
 
@@ -161,6 +168,62 @@ export async function deleteZone(id: string): Promise<ActionResult> {
   if (error) return failure("deleteZone", error);
   updateTag(TAGS.settings);
   redirect("/admin/settings?zone=deleted#delivery");
+}
+
+// ---------------------------------------------------------------------------
+// Page copy (homepage, about, contact, policies)
+// ---------------------------------------------------------------------------
+export async function saveContent(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const denied = await requireAdmin("saveContent");
+  if (denied) return denied;
+
+  const content: Record<string, string> = {};
+  for (const { key, long } of CONTENT_FIELDS) {
+    const value = String(formData.get(key) ?? "").trim();
+    if (value.length > (long ? 1500 : 200)) return { ok: false, error: "One of the texts is too long." };
+    // Only store what differs from the default, so future default tweaks still apply.
+    if (value && value !== DEFAULT_CONTENT[key]) content[key] = value;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("store_settings").update({ content }).eq("id", true);
+  if (error) return failure("saveContent", error);
+  updateTag(TAGS.settings);
+  refresh();
+  return { ok: true, data: undefined, message: "Page text saved." };
+}
+
+// ---------------------------------------------------------------------------
+// Homepage and about images (uploaded by the browser to site/…)
+// ---------------------------------------------------------------------------
+const siteImageSchema = z.object({
+  field: z.enum(["hero_image_path", "about_image_path"]),
+  path: z
+    .string()
+    .regex(/^site\/(hero|about)\/[A-Za-z0-9_-]+\.(webp|jpg)$/)
+    .nullable(),
+});
+
+export async function saveSiteImage(field: string, path: string | null): Promise<ActionResult> {
+  const denied = await requireAdmin("saveSiteImage");
+  if (denied) return denied;
+  const parsed = siteImageSchema.safeParse({ field, path });
+  if (!parsed.success) return { ok: false, error: "That image wasn't uploaded correctly. Try again." };
+
+  const supabase = await createClient();
+  const { data: before } = await supabase.from("store_settings").select("hero_image_path, about_image_path").single();
+  const update = parsed.data.field === "hero_image_path" ? { hero_image_path: parsed.data.path } : { about_image_path: parsed.data.path };
+  const { error } = await supabase.from("store_settings").update(update).eq("id", true);
+  if (error) return failure("saveSiteImage", error);
+
+  const old = before?.[parsed.data.field];
+  if (old && old !== parsed.data.path) {
+    const { error: rmError } = await supabase.storage.from(CATALOG_BUCKET).remove([old]);
+    if (rmError) logError("saveSiteImage.remove", rmError);
+  }
+  updateTag(TAGS.settings);
+  refresh();
+  return { ok: true, data: undefined, message: parsed.data.path ? "Image updated." : "Image removed." };
 }
 
 export async function refreshStorefront(): Promise<ActionResult> {

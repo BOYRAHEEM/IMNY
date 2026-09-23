@@ -19,10 +19,10 @@ export type SettingsValues = {
   currency: string;
   order_prefix: string;
   low_stock_threshold: number;
+  low_stock_badge_threshold: number;
   reservation_minutes: number;
   max_quantity_per_item: number;
   free_delivery_over_minor: number | null;
-  allow_guest_checkout: boolean;
   seo_title: string | null;
   seo_description: string | null;
   social_links: Record<string, string>;
@@ -48,8 +48,13 @@ export function SettingsForm({ s }: { s: SettingsValues }) {
             <Input id="s-tagline" name="tagline" defaultValue={s.tagline ?? ""} maxLength={160} />
           </Field>
         </div>
-        <Field label="Announcement bar" htmlFor="s-announcement" optional hint="A short line shown at the top of every page, e.g. free delivery offer.">
-          <Input id="s-announcement" name="announcement" defaultValue={s.announcement ?? ""} maxLength={200} />
+        <Field
+          label="Scrolling banner"
+          htmlFor="s-announcement"
+          optional
+          hint="Messages in the purple strip under the header. Separate them with |, e.g. IMNY IS LIVE | FREE DELIVERY OVER GHS 3,000"
+        >
+          <Input id="s-announcement" name="announcement" defaultValue={s.announcement ?? ""} maxLength={300} />
         </Field>
       </fieldset>
 
@@ -91,20 +96,22 @@ export function SettingsForm({ s }: { s: SettingsValues }) {
           <Field label="Max quantity per item" htmlFor="s-maxq" hint="Per variant, per order.">
             <Input id="s-maxq" name="max_quantity_per_item" type="number" inputMode="numeric" min={1} max={100} defaultValue={s.max_quantity_per_item} />
           </Field>
-          <Field label="Low-stock alert at" htmlFor="s-low" hint="Warn when this many or fewer are available.">
+          <Field label="Low-stock alert at" htmlFor="s-low" hint="Dashboard warns when a size/colour has this many or fewer left.">
             <Input id="s-low" name="low_stock_threshold" type="number" inputMode="numeric" min={0} max={1000} defaultValue={s.low_stock_threshold} />
+          </Field>
+          <Field label="'Low stock' tag under" htmlFor="s-low-badge" hint="Shoppers see a LOW STOCK tag when a product has fewer than this left in total.">
+            <Input id="s-low-badge" name="low_stock_badge_threshold" type="number" inputMode="numeric" min={0} max={1000} defaultValue={s.low_stock_badge_threshold} />
           </Field>
           <Field label="Hold stock during payment (minutes)" htmlFor="s-hold" hint="Unpaid orders release their items after this.">
             <Input id="s-hold" name="reservation_minutes" type="number" inputMode="numeric" min={5} max={240} defaultValue={s.reservation_minutes} />
           </Field>
           <Field label="Order number prefix" htmlFor="s-prefix" hint={`Orders look like ${s.order_prefix}1024.`}>
-            <Input id="s-prefix" name="order_prefix" defaultValue={s.order_prefix} maxLength={6} autoCapitalize="characters" className="uppercase" />
+            <Input id="s-prefix" name="order_prefix" defaultValue={s.order_prefix} maxLength={7} autoCapitalize="characters" className="uppercase" />
           </Field>
           <Field label="Currency" htmlFor="s-currency" hint="Set by your payment provider.">
             <Input id="s-currency" value={s.currency} disabled readOnly />
           </Field>
         </div>
-        <Checkbox name="allow_guest_checkout" label="Allow checkout without an account" defaultChecked={s.allow_guest_checkout} />
       </fieldset>
 
       <fieldset className="space-y-4 p-4 sm:p-5">
@@ -133,6 +140,7 @@ export type ZoneValues = {
   estimated_days: string | null;
   sort_order: number;
   is_active: boolean;
+  allow_cod: boolean;
 };
 
 export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
@@ -167,6 +175,7 @@ export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
           <Input id="z-order" name="sort_order" type="number" inputMode="numeric" defaultValue={zone?.sort_order ?? 0} className="bg-paper" />
         </Field>
         <Checkbox name="is_active" label="Available at checkout" defaultChecked={zone?.is_active ?? true} />
+        <Checkbox name="allow_cod" label="Allow pay on delivery (cash)" defaultChecked={zone?.allow_cod ?? false} />
       </div>
       <div className="flex flex-wrap gap-2">
         <SubmitButton size="sm" pendingText="Saving…">

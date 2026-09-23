@@ -31,7 +31,8 @@ export function OrderStatusBadge({ status }: { status: string }) {
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }
 
-export function PaymentStatusBadge({ status }: { status: string }) {
+export function PaymentStatusBadge({ status, method }: { status: string; method?: string }) {
+  if (method === "cod" && status === "pending") return <Badge tone="info">Cash on delivery</Badge>;
   const s = PAYMENT[status as PaymentStatus] ?? { label: status, tone: "neutral" as const };
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }

@@ -33,7 +33,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     supabase.rpc("admin_dashboard_stats"),
     supabase
       .from("orders")
-      .select("id, order_number, shipping_name, total_minor, currency, status, payment_status, created_at")
+      .select("id, order_number, shipping_name, total_minor, currency, status, payment_status, payment_method, created_at")
       .order("created_at", { ascending: false })
       .limit(8),
     supabase.rpc("admin_low_stock", { p_limit: 8 }),
@@ -121,7 +121,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
                         {o.order_number} <span className="font-normal text-muted">· {o.shipping_name}</span>
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        <PaymentStatusBadge status={o.payment_status} />
+                        <PaymentStatusBadge status={o.payment_status} method={o.payment_method} />
                         <OrderStatusBadge status={o.status} />
                       </div>
                     </div>

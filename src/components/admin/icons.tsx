@@ -25,6 +25,7 @@ const PATHS = {
   star: "M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z",
   image: "M4 5h16v14H4zM4 15l4-4 5 5M14 14l2-2 4 4M15.5 9.5h.01",
   upload: "M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3",
+  mail: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 7l9 6 9-6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

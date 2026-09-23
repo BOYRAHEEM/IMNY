@@ -17,6 +17,8 @@ const NAV: NavItem[] = [
   { href: "/admin/categories", label: "Categories", icon: "folder" },
   { href: "/admin/customers", label: "Customers", icon: "users" },
   { href: "/admin/discounts", label: "Discounts", icon: "percent" },
+  { href: "/admin/lookbook", label: "Lookbook", icon: "image" },
+  { href: "/admin/inbox", label: "Inbox", icon: "mail" },
   { href: "/admin/settings", label: "Settings", icon: "settings", adminOnly: true },
 ];
 
