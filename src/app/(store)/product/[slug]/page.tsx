@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/store/product-card";
 import { ProductView } from "@/components/store/product-view";
+import { ui } from "@/components/store/ui";
 import { publicEnv } from "@/lib/env";
 import { catalogImageUrl } from "@/lib/images";
 import { formatMoney } from "@/lib/money";
 import { getAvailability, getProductBySlug, listProducts, safely } from "@/lib/queries/catalog";
-import { getStoreSettings } from "@/lib/queries/settings";
+import { deliverySummary, getDeliveryZones, getStoreSettings } from "@/lib/queries/settings";
 
 export const revalidate = 300;
 
@@ -45,8 +45,9 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
   const product = await load((await params).slug);
   if (!product || product.variants.length === 0) notFound();
 
-  const [settings, availability, related] = await Promise.all([
+  const [settings, zones, availability, related] = await Promise.all([
     getStoreSettings(),
+    getDeliveryZones(),
     safely("product.availability", () => getAvailability([product.id]), {} as Record<string, number>),
     safely(
       "product.related",
@@ -94,72 +95,47 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
     },
   };
 
+  const { freeOver, flatFee } = deliverySummary(settings, zones);
+  const deliveryLine = [
+    "delivery across ghana",
+    freeOver !== null ? `free over ${formatMoney(freeOver, settings.currency)}` : null,
+    flatFee !== null && flatFee > 0 ? `${formatMoney(flatFee, settings.currency)} under that` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 md:pt-10 lg:px-10">
+    <>
       <script
         type="application/ld+json"
         // Escape "<" so product text can never close the script tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
 
-      <nav aria-label="Breadcrumb" className="mb-4 hidden text-xs text-muted md:block">
-        <ol className="flex gap-2">
-          <li>
-            <Link href="/shop" className="hover:text-ink">
-              Shop
-            </Link>
-          </li>
-          {product.category && (
-            <>
-              <li aria-hidden>/</li>
-              <li>
-                <Link href={`/shop/${product.category.slug}`} className="hover:text-ink">
-                  {product.category.name}
-                </Link>
-              </li>
-            </>
-          )}
-        </ol>
-      </nav>
-
       <ProductView
         name={product.name}
+        description={product.description}
         currency={settings.currency}
         maxQuantity={settings.max_quantity_per_item}
+        lowStockUnder={settings.low_stock_badge_threshold}
         options={product.options}
         variants={variants}
         images={images}
       >
-        <div className="mt-10 divide-y divide-line border-y border-line">
-          {product.description && (
-            <details open className="group py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-sm tracking-wide uppercase">
-                Details <span className="text-muted group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-ink-soft">{product.description}</p>
-            </details>
-          )}
-          <details className="group py-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-sm tracking-wide uppercase">
-              Delivery <span className="text-muted group-open:rotate-45 transition-transform">+</span>
-            </summary>
-            <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              We deliver across Ghana. Fees and delivery times for your area are shown at checkout.
-              {settings.free_delivery_over_minor !== null &&
-                ` Free delivery on orders over ${formatMoney(settings.free_delivery_over_minor, settings.currency)}.`}
-            </p>
-          </details>
-        </div>
+        <ul className="m-0 grid list-none gap-1.5 border-t border-rule p-0 pt-5 font-mono text-[11px] tracking-[0.08em] text-label">
+          <li>{deliveryLine}</li>
+          <li>{settings.content.returns_policy}</li>
+        </ul>
       </ProductView>
 
       {related.products.length > 0 && (
-        <section className="mt-24" aria-labelledby="related">
-          <h2 id="related" className="mb-8 font-display text-3xl">
-            You may also like
+        <section className="px-[22px] py-[clamp(28px,5vw,72px)]" aria-labelledby="related">
+          <h2 id="related" className={ui.h2("mb-[26px]")}>
+            more from the drop
           </h2>
-          <ProductGrid products={related.products} currency={settings.currency} />
+          <ProductGrid products={related.products} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} />
         </section>
       )}
-    </div>
+    </>
   );
 }

@@ -5,73 +5,109 @@ import { orderUrl } from "@/lib/order-links";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { escapeHtml, sendEmail } from "./send";
 
-/** Email the customer their confirmation after payment is verified. */
-export async function sendOrderConfirmation(orderId: string): Promise<void> {
+type Kind = "confirmed" | "shipped";
+
+/**
+ * Customer emails. "confirmed" is sent once payment is verified (or straight
+ * away for pay-on-delivery); "shipped" when staff mark the order shipped.
+ */
+async function sendOrderEmail(orderId: string, kind: Kind): Promise<void> {
   try {
     const db = createServiceClient();
     const [{ data: order }, { data: settings }] = await Promise.all([
       db
         .from("orders")
-        .select("id, order_number, email, shipping_name, shipping_line1, shipping_line2, shipping_city, shipping_region, delivery_zone_name, currency, subtotal_minor, delivery_fee_minor, discount_minor, total_minor, items:order_items(product_name, variant_title, quantity, line_total_minor)")
+        .select(
+          "id, order_number, email, shipping_name, shipping_line1, shipping_line2, shipping_city, shipping_region, delivery_zone_name, " +
+            "currency, subtotal_minor, delivery_fee_minor, discount_minor, total_minor, payment_method, payment_status, " +
+            "items:order_items(product_name, variant_title, quantity, line_total_minor)",
+        )
         .eq("id", orderId)
         .single(),
       db.from("store_settings").select("store_name, contact_email").single(),
     ]);
     if (!order) return;
+    const o = order as unknown as {
+      id: string;
+      order_number: string;
+      email: string;
+      shipping_name: string;
+      shipping_line1: string;
+      shipping_line2: string | null;
+      shipping_city: string;
+      shipping_region: string;
+      delivery_zone_name: string;
+      currency: string;
+      subtotal_minor: number;
+      delivery_fee_minor: number;
+      discount_minor: number;
+      total_minor: number;
+      payment_method: string;
+      payment_status: string;
+      items: { product_name: string; variant_title: string | null; quantity: number; line_total_minor: number }[];
+    };
 
     const store = settings?.store_name ?? "Our store";
-    const money = (m: number) => formatMoney(m, order.currency);
-    const link = orderUrl(order.order_number, order.id);
-    const firstName = order.shipping_name.split(" ")[0];
+    const money = (m: number) => formatMoney(m, o.currency);
+    const link = orderUrl(o.order_number, o.id);
+    const firstName = o.shipping_name.split(" ")[0];
+    const cashDue = o.payment_method === "cod" && o.payment_status !== "paid";
     const e = escapeHtml;
 
-    const rows = order.items
+    const headline = kind === "shipped" ? `It's on the way, ${firstName}.` : `It's yours now, ${firstName}.`;
+    const intro =
+      kind === "shipped"
+        ? `Order <strong>${e(o.order_number)}</strong> has left the studio and is on its way to you.${cashDue ? ` Please have <strong>${money(o.total_minor)}</strong> in cash ready for the rider.` : ""}`
+        : cashDue
+          ? `We've got order <strong>${e(o.order_number)}</strong> and we're packing it up. You'll pay <strong>${money(o.total_minor)}</strong> in cash when it arrives.`
+          : `We've received your payment for order <strong>${e(o.order_number)}</strong> and we're packing it up.`;
+    const subject =
+      kind === "shipped" ? `Order ${o.order_number} is on the way` : cashDue ? `Order ${o.order_number} received` : `Order ${o.order_number} confirmed`;
+
+    const rows = o.items
       .map(
         (i) =>
-          `<tr><td style="padding:8px 0;border-bottom:1px solid #e6e3de">${e(i.product_name)}${i.variant_title ? `<br><span style="color:#6b6760">${e(i.variant_title)}</span>` : ""} × ${i.quantity}</td><td style="padding:8px 0;border-bottom:1px solid #e6e3de;text-align:right">${money(i.line_total_minor)}</td></tr>`,
+          `<tr><td style="padding:8px 0;border-bottom:1px solid #e5e2d9">${e(i.product_name)}${i.variant_title ? `<br><span style="color:#6f6b63">${e(i.variant_title)}</span>` : ""} × ${i.quantity}</td><td style="padding:8px 0;border-bottom:1px solid #e5e2d9;text-align:right">${money(i.line_total_minor)}</td></tr>`,
       )
       .join("");
     const totals = [
-      ["Subtotal", money(order.subtotal_minor)],
-      ...(order.discount_minor > 0 ? [["Discount", `−${money(order.discount_minor)}`]] : []),
-      [`Delivery (${order.delivery_zone_name})`, order.delivery_fee_minor ? money(order.delivery_fee_minor) : "Free"],
+      ["Subtotal", money(o.subtotal_minor)],
+      ...(o.discount_minor > 0 ? [["Discount", `−${money(o.discount_minor)}`]] : []),
+      [`Delivery (${o.delivery_zone_name})`, o.delivery_fee_minor ? money(o.delivery_fee_minor) : "Free"],
     ]
-      .map(([k, v]) => `<tr><td style="padding:4px 0;color:#6b6760">${e(k)}</td><td style="padding:4px 0;text-align:right">${v}</td></tr>`)
+      .map(([k, v]) => `<tr><td style="padding:4px 0;color:#6f6b63">${e(k)}</td><td style="padding:4px 0;text-align:right">${v}</td></tr>`)
       .join("");
-    const address = [order.shipping_line1, order.shipping_line2, `${order.shipping_city}, ${order.shipping_region}`].filter(Boolean).map((l) => e(l!)).join("<br>");
+    const address = [o.shipping_line1, o.shipping_line2, `${o.shipping_city}, ${o.shipping_region}`].filter(Boolean).map((l) => e(l!)).join("<br>");
 
-    const html = `<!doctype html><html><body style="margin:0;background:#f6f5f2;font-family:Helvetica,Arial,sans-serif;color:#141414">
+    const html = `<!doctype html><html><body style="margin:0;background:#fbfaf8;font-family:Helvetica,Arial,sans-serif;color:#14120f">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;padding:32px">
-<tr><td style="font-family:Georgia,serif;font-size:24px;letter-spacing:3px;text-transform:uppercase;text-align:center;padding-bottom:24px">${e(store)}</td></tr>
-<tr><td style="font-size:20px;padding-bottom:8px">Thank you, ${e(firstName)}.</td></tr>
-<tr><td style="color:#3d3b38;padding-bottom:24px">We've received your payment for order <strong>${e(order.order_number)}</strong> and we're getting it ready.</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:24px;padding:32px">
+<tr><td style="font-size:26px;font-weight:700;letter-spacing:-1.5px;padding-bottom:24px">${e(store)}</td></tr>
+<tr><td style="font-size:22px;font-weight:700;letter-spacing:-0.5px;padding-bottom:8px">${e(headline)}</td></tr>
+<tr><td style="color:#46423b;padding-bottom:24px;line-height:1.6">${intro}</td></tr>
 <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">${rows}${totals}
-<tr><td style="padding:8px 0;font-weight:bold;border-top:1px solid #141414">Total paid</td><td style="padding:8px 0;font-weight:bold;text-align:right;border-top:1px solid #141414">${money(order.total_minor)}</td></tr></table></td></tr>
-<tr><td style="padding-top:24px;font-size:14px;color:#3d3b38"><strong style="color:#141414">Delivering to</strong><br>${address}</td></tr>
-<tr><td style="padding-top:28px" align="center"><a href="${e(link)}" style="display:inline-block;background:#141414;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:1px;text-transform:uppercase">Track your order</a></td></tr>
-<tr><td style="padding-top:28px;font-size:12px;color:#6b6760;text-align:center">Keep this email: the button above is your private link to check your order status.${settings?.contact_email ? ` Questions? Reply or write to ${e(settings.contact_email)}.` : ""}</td></tr>
+<tr><td style="padding:10px 0;font-weight:bold;border-top:1px solid #14120f">${cashDue ? "To pay on delivery" : "Total paid"}</td><td style="padding:10px 0;font-weight:bold;text-align:right;border-top:1px solid #14120f">${money(o.total_minor)}</td></tr></table></td></tr>
+<tr><td style="padding-top:24px;font-size:14px;color:#46423b"><strong style="color:#14120f">Delivering to</strong><br>${address}</td></tr>
+<tr><td style="padding-top:28px" align="center"><a href="${e(link)}" style="display:inline-block;background:#14120f;color:#fbfaf8;text-decoration:none;padding:16px 32px;border-radius:999px;font-family:Menlo,monospace;font-size:12px;font-weight:600;letter-spacing:3px">TRACK YOUR ORDER</a></td></tr>
+<tr><td style="padding-top:28px;font-size:12px;color:#8e897f;text-align:center">Keep this email: the button is your private link to check your order.${settings?.contact_email ? ` Questions? Reply or write to ${e(settings.contact_email)}.` : ""}</td></tr>
 </table></td></tr></table></body></html>`;
 
     const text = [
-      `Thank you, ${firstName}.`,
-      `We've received your payment for order ${order.order_number}.`,
+      headline,
+      intro.replace(/<[^>]+>/g, ""),
       "",
-      ...order.items.map((i) => `${i.product_name}${i.variant_title ? ` (${i.variant_title})` : ""} x${i.quantity}: ${money(i.line_total_minor)}`),
+      ...o.items.map((i) => `${i.product_name}${i.variant_title ? ` (${i.variant_title})` : ""} x${i.quantity}: ${money(i.line_total_minor)}`),
       "",
-      `Total paid: ${money(order.total_minor)}`,
+      `${cashDue ? "To pay on delivery" : "Total paid"}: ${money(o.total_minor)}`,
       "",
       `Track your order: ${link}`,
     ].join("\n");
 
-    await sendEmail({
-      to: order.email,
-      subject: `Order ${order.order_number} confirmed`,
-      html,
-      text,
-      replyTo: settings?.contact_email,
-    });
+    await sendEmail({ to: o.email, subject, html, text, replyTo: settings?.contact_email });
   } catch (err) {
-    logError("sendOrderConfirmation", err);
+    logError(`sendOrderEmail.${kind}`, err);
   }
 }
+
+export const sendOrderConfirmation = (orderId: string) => sendOrderEmail(orderId, "confirmed");
+export const sendOrderShipped = (orderId: string) => sendOrderEmail(orderId, "shipped");

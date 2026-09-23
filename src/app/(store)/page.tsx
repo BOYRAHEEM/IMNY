@@ -1,108 +1,89 @@
 import Image from "next/image";
 import Link from "next/link";
+import { WelcomeGate } from "@/components/store/chrome";
 import { ProductGrid } from "@/components/store/product-card";
-import { buttonClasses } from "@/components/ui/button";
+import { ui } from "@/components/store/ui";
+import { splitList } from "@/content/site";
 import { catalogImageUrl } from "@/lib/images";
-import { getCategories, listProducts, safely } from "@/lib/queries/catalog";
+import { listProducts, safely } from "@/lib/queries/catalog";
 import { getStoreSettings } from "@/lib/queries/settings";
 
 export const revalidate = 300;
 
+const TAG_TONES = ["ink", "lime", "outline"] as const;
+
 export default async function HomePage() {
   const empty = { products: [], total: 0 };
-  const [settings, newest, featured, categories] = await Promise.all([
+  const [settings, featured, newest] = await Promise.all([
     getStoreSettings(),
-    safely("home.newest", () => listProducts({ sort: "newest", limit: 8 }), empty),
-    safely("home.featured", () => listProducts({ featured: true, limit: 8 }), empty),
-    safely("home.categories", getCategories, []),
+    safely("home.featured", () => listProducts({ featured: true, limit: 4 }), empty),
+    safely("home.newest", () => listProducts({ sort: "newest", limit: 4 }), empty),
   ]);
-
-  const hero = featured.products.find((p) => p.image_path) ?? newest.products.find((p) => p.image_path);
-  const heroImage = catalogImageUrl(hero?.image_path);
-  const topCategories = categories.filter((c) => !c.parent_id);
-
-  if (newest.total === 0) {
-    return (
-      <section className="mx-auto flex max-w-2xl flex-col items-center px-4 py-32 text-center">
-        <h1 className="font-display text-5xl">{settings.store_name}</h1>
-        <p className="mt-4 text-muted">{settings.tagline ?? "Our first collection is on its way."}</p>
-      </section>
-    );
-  }
+  const c = settings.content;
+  const hits = featured.products.length ? featured.products : newest.products;
+  const heroImage = catalogImageUrl(settings.hero_image_path);
 
   return (
     <>
-      <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 pt-6 sm:px-6 md:grid-cols-2 md:gap-12 md:pt-10 lg:px-10">
-        <div className="order-2 md:order-1 md:py-16">
-          <p className="mb-4 text-xs tracking-[0.25em] text-muted uppercase">New collection</p>
-          <h1 className="font-display text-5xl leading-[1.02] font-medium sm:text-6xl lg:text-7xl">
-            {settings.tagline ?? settings.store_name}
-          </h1>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/shop" className={buttonClasses("primary", "md", "px-8 tracking-wide uppercase")}>
-              Shop now
+      <WelcomeGate badge={c.splash_badge} est={c.est_label} />
+
+      <section className="relative grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+        <div className="flex min-h-[64vh] flex-col justify-between gap-11 p-[clamp(28px,5vw,72px)]">
+          <div className="flex flex-wrap gap-2">
+            {splitList(c.hero_badges).map((b, i) => (
+              <span key={b} className={ui.tag(TAG_TONES[i % TAG_TONES.length])}>
+                {b}
+              </span>
+            ))}
+          </div>
+          <div>
+            <h1 className="m-0 text-[clamp(48px,9vw,128px)] leading-[0.84] font-bold tracking-[-0.07em] text-balance">{c.hero_heading}</h1>
+            <p className="mt-[26px] mb-0 max-w-[42ch] text-[17px] leading-[1.55] text-copy">{c.hero_text}</p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link href="/shop" className={ui.cta()}>
+              SHOP THE DROP
             </Link>
-            {hero && (
-              <Link href={`/product/${hero.slug}`} className={buttonClasses("ghost", "md", "tracking-wide underline underline-offset-4")}>
-                {hero.name}
-              </Link>
-            )}
+            <Link href="/lookbook" className={ui.ctaOutline()}>
+              SEE THE LOOKS
+            </Link>
           </div>
         </div>
-        {heroImage && hero && (
-          <Link href={`/product/${hero.slug}`} className="relative order-1 block aspect-[4/5] overflow-hidden bg-mist md:order-2">
-            <Image
-              src={heroImage}
-              alt={hero.image_alt || hero.name}
-              fill
-              priority
-              sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-cover"
-            />
-          </Link>
-        )}
+        <Link
+          href="/shop"
+          aria-label="Shop the drop"
+          className="relative flex min-h-[64vh] items-end overflow-hidden p-5 transition-transform duration-[320ms] ease-out hover:scale-[1.02] motion-reduce:hover:scale-100"
+        >
+          {heroImage ? (
+            <Image src={heroImage} alt="" fill priority sizes="(min-width: 640px) 50vw, 100vw" className="object-cover" />
+          ) : (
+            <>
+              <span className="placeholder-stripes absolute inset-0" />
+              <span className={ui.caption("relative")}>CAMPAIGN IMAGE · 4:5 PORTRAIT</span>
+            </>
+          )}
+          <span className={ui.tag("lime", "absolute top-5 left-5 animate-bob px-5 py-[11px] text-[11px]")}>{c.hero_sticker}</span>
+        </Link>
       </section>
 
-      <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-6 lg:px-10" aria-labelledby="new-in">
-        <div className="mb-8 flex items-end justify-between">
-          <h2 id="new-in" className="font-display text-3xl sm:text-4xl">
-            New in
+      <section className="px-[22px] py-[clamp(28px,5vw,72px)]" aria-labelledby="hits">
+        <div className="mb-[26px] flex flex-wrap items-baseline justify-between gap-4">
+          <h2 id="hits" className={ui.h2()}>
+            {c.featured_heading}
           </h2>
-          <Link href="/shop" className="text-sm underline underline-offset-4">
-            View all
+          <Link
+            href="/shop"
+            className="border-b border-ink pb-0.5 font-mono text-[11px] font-medium tracking-[0.16em] transition-[letter-spacing,color] duration-200 hover:tracking-[0.24em] hover:text-violet"
+          >
+            see everything →
           </Link>
         </div>
-        <ProductGrid products={newest.products} currency={settings.currency} />
+        {hits.length ? (
+          <ProductGrid products={hits} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} priorityCount={2} />
+        ) : (
+          <p className="font-mono text-xs tracking-[0.1em] text-label">the first drop is on its way.</p>
+        )}
       </section>
-
-      {featured.products.length > 0 && (
-        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6 lg:px-10" aria-labelledby="featured">
-          <h2 id="featured" className="mb-8 font-display text-3xl sm:text-4xl">
-            Featured
-          </h2>
-          <ProductGrid products={featured.products} currency={settings.currency} />
-        </section>
-      )}
-
-      {topCategories.length > 0 && (
-        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6 lg:px-10" aria-labelledby="collections">
-          <h2 id="collections" className="mb-6 text-xs tracking-[0.25em] text-muted uppercase">
-            Collections
-          </h2>
-          <ul className="divide-y divide-line border-y border-line">
-            {topCategories.map((c) => (
-              <li key={c.id}>
-                <Link href={`/shop/${c.slug}`} className="group flex items-center justify-between py-5">
-                  <span className="font-display text-3xl transition-transform duration-300 group-hover:translate-x-2 sm:text-4xl">{c.name}</span>
-                  <span aria-hidden className="text-muted transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </>
   );
 }

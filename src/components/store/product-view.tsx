@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { cart } from "./cart-store";
+import { ui } from "./ui";
 import {
   findVariant,
   initialSelection,
@@ -22,31 +23,50 @@ export type ViewImage = { id: string; url: string; alt: string; width: number | 
 
 type Props = {
   name: string;
+  description: string | null;
   currency: string;
   maxQuantity: number;
+  lowStockUnder: number;
   options: ViewOption[];
   variants: SelectableVariant[];
   images: ViewImage[];
-  children?: React.ReactNode; // description etc., rendered under the buy box
+  children?: React.ReactNode;
 };
 
-export function ProductView({ name, currency, maxQuantity, options, variants, images, children }: Props) {
+const isColour = (name: string) => /colou?r/i.test(name);
+const isSize = (name: string) => /size/i.test(name);
+
+/** The design pre-selects M when that size is in stock. */
+function designDefault(variants: SelectableVariant[], options: ViewOption[]): Selection {
+  let sel = initialSelection(variants, options);
+  options.forEach((o, i) => {
+    if (sel[i] || !isSize(o.name)) return;
+    const m = o.values.find((v) => v.value.toUpperCase() === "M");
+    if (m && valueState(variants, sel, i, m.id) === "available") sel = select(variants, sel, i, m.id);
+  });
+  return sel;
+}
+
+export function ProductView({ name, description, currency, maxQuantity, lowStockUnder, options, variants, images, children }: Props) {
   const router = useRouter();
-  const [selection, setSelection] = useState<Selection>(() => initialSelection(variants, options));
+  const [selection, setSelection] = useState<Selection>(() => designDefault(variants, options));
   const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [prompt, setPrompt] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const variant = findVariant(variants, selection, options.length);
   const range = priceRange(variants);
+  const totalAvailable = variants.reduce((n, v) => n + Math.max(0, v.available), 0);
+  const soldOut = totalAvailable <= 0;
+  const lowStock = !soldOut && totalAvailable < lowStockUnder;
   const available = variant?.available ?? 0;
   const maxQty = Math.max(1, Math.min(available, maxQuantity));
   const qty = Math.min(quantity, maxQty);
-  const missing = options.find((_, i) => !selection[i]);
-  const everythingSoldOut = variants.every((v) => v.available <= 0);
 
-  // Show photos for the chosen colour (plus photos not tied to a colour).
-  const colourIndex = options.findIndex((o) => /colou?r/i.test(o.name));
+  const colourIndex = options.findIndex((o) => isColour(o.name));
   const chosenColour = colourIndex >= 0 ? selection[colourIndex] : null;
   const gallery = useMemo(() => {
     if (!chosenColour) return images;
@@ -54,10 +74,10 @@ export function ProductView({ name, currency, maxQuantity, options, variants, im
     return filtered.length ? filtered : images;
   }, [images, chosenColour]);
 
-  function choose(optionIndex: number, valueId: string) {
-    setSelection((s) => select(variants, s, optionIndex, valueId));
-    setAdded(null);
+  function choose(i: number, valueId: string) {
+    setSelection((s) => select(variants, s, i, valueId));
     setPrompt(false);
+    setNotice(null);
   }
 
   function addToBag(): boolean {
@@ -66,9 +86,12 @@ export function ProductView({ name, currency, maxQuantity, options, variants, im
       return false;
     }
     if (variant.available <= 0) return false;
+    const before = qty;
     const inBag = cart.add(variant.id, qty, Math.min(variant.available, maxQuantity));
-    const label = options.length ? options.map((o, i) => o.values.find((v) => v.id === selection[i])?.value).join(" / ") : name;
-    setAdded(inBag < qty ? `Only ${inBag} available — your bag has the maximum.` : `${label} added to your bag.`);
+    setNotice(inBag < before ? `only ${inBag} available, so your bag has the max.` : null);
+    setJustAdded(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setJustAdded(false), 1600);
     return true;
   }
 
@@ -78,185 +101,223 @@ export function ProductView({ name, currency, maxQuantity, options, variants, im
       ? formatMoney(range.min, currency)
       : `${formatMoney(range.min, currency)} – ${formatMoney(range.max, currency)}`;
   const compareAt = variant?.compare_at_price_minor ?? null;
+  const missing = options.find((_, i) => !selection[i]);
 
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] md:gap-10 lg:gap-16">
-      <Gallery images={gallery} name={name} key={chosenColour ?? "all"} />
+    <section className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 p-4">
+      <Gallery key={chosenColour ?? "all"} images={gallery} name={name} lowStock={lowStock} />
 
-      <div className="md:sticky md:top-24 md:self-start">
-        <h1 className="font-display text-4xl leading-tight font-medium sm:text-5xl">{name}</h1>
-        <p className="mt-3 text-lg tabular">
-          {price}
-          {compareAt && compareAt > (variant?.price_minor ?? 0) && (
-            <s className="ml-3 text-base text-muted">{formatMoney(compareAt, currency)}</s>
-          )}
-        </p>
+      <div className="flex flex-col gap-7 self-start p-[clamp(20px,4vw,56px)] md:sticky md:top-[74px]">
+        <Link href="/shop" className={ui.pill("self-start px-4 py-2 tracking-[0.14em]")}>
+          ← back
+        </Link>
 
-        <div className="mt-8 space-y-7">
-          {options.map((option, i) => {
-            const isColour = /colou?r/i.test(option.name);
-            const chosen = option.values.find((v) => v.id === selection[i]);
-            return (
-              <fieldset key={option.id}>
-                <legend className="mb-3 text-sm">
-                  <span className="text-muted">{option.name}:</span> {chosen?.value ?? ""}
-                </legend>
-                <div className="flex flex-wrap gap-2">
-                  {option.values.map((v) => {
-                    const state = valueState(variants, selection, i, v.id);
-                    if (state === "unavailable") return null;
-                    const selected = selection[i] === v.id;
-                    const soldOut = state === "soldout";
-                    return isColour && v.swatch_hex ? (
+        <div>
+          <h1 className="m-0 text-[clamp(28px,4.2vw,52px)] leading-[0.98] font-bold tracking-[-0.05em] uppercase">{name}</h1>
+          <div className="mt-3.5 flex flex-wrap items-center gap-2.5 font-mono text-[15px] font-semibold">
+            <span>{price}</span>
+            {compareAt && compareAt > (variant?.price_minor ?? 0) && <s className="text-caption">{formatMoney(compareAt, currency)}</s>}
+            {soldOut ? (
+              <span className={ui.tag("ink", "px-3 py-1.5")}>SOLD OUT</span>
+            ) : lowStock ? (
+              <span className={ui.tag("violet", "px-3 py-1.5")}>LOW STOCK</span>
+            ) : null}
+          </div>
+        </div>
+
+        {description && <p className="m-0 max-w-[46ch] text-base leading-[1.65] whitespace-pre-line text-copy">{description}</p>}
+
+        {options.map((option, i) => {
+          const chosen = option.values.find((v) => v.id === selection[i]);
+          const colour = isColour(option.name);
+          return (
+            <fieldset key={option.id} className="m-0 border-0 p-0">
+              <legend className={ui.label("mb-3 p-0")}>
+                {colour ? `colour · ${chosen?.value.toUpperCase() ?? "pick one"}` : isSize(option.name) ? "pick a size" : option.name.toLowerCase()}
+              </legend>
+              <div className={cn("flex flex-wrap", colour ? "gap-2.5" : "gap-2")}>
+                {option.values.map((v) => {
+                  const state = valueState(variants, selection, i, v.id);
+                  if (state === "unavailable") return null;
+                  const selected = selection[i] === v.id;
+                  const out = state === "soldout";
+                  if (colour && v.swatch_hex) {
+                    return (
                       <button
                         key={v.id}
                         type="button"
                         onClick={() => choose(i, v.id)}
-                        disabled={soldOut}
+                        disabled={out}
                         aria-pressed={selected}
-                        aria-label={`${v.value}${soldOut ? ", sold out" : ""}`}
-                        title={`${v.value}${soldOut ? " — sold out" : ""}`}
+                        aria-label={`${v.value}${out ? ", sold out" : ""}`}
+                        title={`${v.value}${out ? " · sold out" : ""}`}
+                        style={{ background: v.swatch_hex }}
                         className={cn(
-                          "relative flex size-11 items-center justify-center rounded-full border transition-colors",
-                          selected ? "border-ink" : "border-transparent hover:border-line-strong",
-                          soldOut && "cursor-not-allowed opacity-40",
+                          "relative size-11 cursor-pointer rounded-full p-0",
+                          selected ? "border-2 border-ink shadow-[0_0_0_3px_#fbfaf8,0_0_0_4px_#14120f]" : "border border-rule",
+                          out && "cursor-not-allowed opacity-40",
                         )}
                       >
-                        <span className="size-8 rounded-full border border-line-strong" style={{ background: v.swatch_hex }} />
-                        {soldOut && <span aria-hidden className="absolute h-px w-9 rotate-45 bg-ink" />}
-                      </button>
-                    ) : (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => choose(i, v.id)}
-                        disabled={soldOut}
-                        aria-pressed={selected}
-                        aria-label={`${v.value}${soldOut ? ", sold out" : ""}`}
-                        className={cn(
-                          "h-11 min-w-12 border px-4 text-sm transition-colors",
-                          selected ? "border-ink bg-ink text-paper" : "border-line-strong hover:border-ink",
-                          soldOut && "cursor-not-allowed border-line text-faint line-through hover:border-line",
-                        )}
-                      >
-                        {v.value}
-                        {soldOut && <span className="sr-only"> (sold out)</span>}
+                        {out && <span aria-hidden className="absolute top-1/2 left-1/2 h-px w-10 -translate-x-1/2 rotate-45 bg-ink" />}
                       </button>
                     );
-                  })}
-                </div>
-                {prompt && !selection[i] && (
-                  <p role="alert" className="mt-2 text-sm text-bad">
-                    Please choose a {option.name.toLowerCase()}.
-                  </p>
-                )}
-              </fieldset>
-            );
-          })}
-
-          {variant && available > 0 && available <= 3 && (
-            <p className="text-sm text-warn">Only {available} left</p>
-          )}
-
-          {!everythingSoldOut && (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted" id="qty-label">
-                Quantity
-              </span>
-              <div className="flex h-11 items-center border border-line-strong" role="group" aria-labelledby="qty-label">
-                <button type="button" onClick={() => setQuantity(Math.max(1, qty - 1))} disabled={qty <= 1} className="h-full w-11 disabled:text-faint" aria-label="Decrease quantity">
-                  −
-                </button>
-                <span className="w-8 text-center text-sm tabular" aria-live="polite">
-                  {qty}
-                </span>
-                <button type="button" onClick={() => setQuantity(Math.min(maxQty, qty + 1))} disabled={qty >= maxQty || !variant} className="h-full w-11 disabled:text-faint" aria-label="Increase quantity">
-                  +
-                </button>
+                  }
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => choose(i, v.id)}
+                      disabled={out}
+                      aria-pressed={selected}
+                      aria-label={`${v.value}${out ? ", sold out" : ""}`}
+                      className={ui.choice(selected, cn(out && "border-rule text-caption line-through opacity-100"))}
+                    >
+                      {v.value}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {everythingSoldOut || (variant && available <= 0) ? (
-              <button type="button" disabled className="h-12 w-full cursor-not-allowed bg-line text-sm tracking-wide text-muted uppercase">
-                Sold out
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={addToBag}
-                  className="h-12 w-full bg-ink text-sm tracking-wide text-paper uppercase transition-colors hover:bg-ink-soft"
-                >
-                  {missing && prompt ? `Select ${missing.name.toLowerCase()}` : "Add to bag"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addToBag() && router.push("/checkout")}
-                  className="h-12 w-full border border-ink text-sm tracking-wide uppercase transition-colors hover:bg-mist"
-                >
-                  Buy now
-                </button>
-              </>
-            )}
-            <p aria-live="polite" className="min-h-5 text-sm">
-              {added && (
-                <>
-                  {added}{" "}
-                  <Link href="/cart" className="underline underline-offset-4">
-                    View bag
-                  </Link>
-                </>
+              {prompt && !selection[i] && (
+                <p role="alert" className="mt-2.5 mb-0 font-mono text-xs text-violet">
+                  pick a {option.name.toLowerCase()} first.
+                </p>
               )}
-            </p>
+            </fieldset>
+          );
+        })}
+
+        {variant && available > 0 && available <= 3 && (
+          <p className="m-0 font-mono text-xs tracking-[0.08em] text-violet">only {available} left in this one</p>
+        )}
+
+        {!soldOut && (
+          <div className="flex items-center gap-4">
+            <span id="qty-label" className={ui.label()}>
+              qty
+            </span>
+            <div role="group" aria-labelledby="qty-label" className="inline-flex items-center gap-0.5 rounded-full border border-ink p-[3px]">
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.max(1, qty - 1))}
+                disabled={qty <= 1}
+                aria-label="Decrease quantity"
+                className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
+              >
+                −
+              </button>
+              <span className="min-w-[22px] text-center font-mono text-xs font-semibold" aria-live="polite">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.min(maxQty, qty + 1))}
+                disabled={qty >= maxQty || !variant}
+                aria-label="Increase quantity"
+                className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
+              >
+                +
+              </button>
+            </div>
           </div>
+        )}
+
+        <div className="flex flex-col gap-2.5">
+          {soldOut || (variant && available <= 0) ? (
+            <button type="button" disabled className={ui.cta("w-full py-5 text-[13px] tracking-[0.26em]")}>
+              SOLD OUT
+            </button>
+          ) : (
+            <>
+              <button type="button" onClick={addToBag} className={ui.cta("w-full py-5 text-[13px] tracking-[0.26em]")} aria-live="polite">
+                {justAdded ? "IN YOUR BAG" : prompt && missing ? `PICK A ${missing.name.toUpperCase()}` : "ADD TO BAG"}
+              </button>
+              <button type="button" onClick={() => addToBag() && router.push("/checkout")} className={ui.ctaOutline("w-full py-4")}>
+                BUY NOW
+              </button>
+            </>
+          )}
+          {(justAdded || notice) && (
+            <p className="m-0 font-mono text-xs tracking-[0.06em] text-label">
+              {notice ?? "added."}{" "}
+              <Link href="/cart" className="border-b border-ink text-ink">
+                view bag
+              </Link>
+            </p>
+          )}
         </div>
 
         {children}
       </div>
-    </div>
+    </section>
   );
 }
 
-/** One set of images: a swipeable strip on phones, a two-column grid from tablet up. */
-function Gallery({ images, name }: { images: ViewImage[]; name: string }) {
+function Gallery({ images, name, lowStock }: { images: ViewImage[]; name: string; lowStock: boolean }) {
   const [index, setIndex] = useState(0);
+  const strip = useRef<HTMLDivElement>(null);
 
-  if (images.length === 0) {
-    return <div className="flex aspect-[4/5] items-center justify-center bg-mist font-display text-2xl text-faint">{name}</div>;
+  // Two placeholder shots until real photos are uploaded (per design).
+  const shots: (ViewImage | { id: string; placeholder: string })[] = images.length
+    ? images
+    : [
+        { id: "ph1", placeholder: "PRODUCT SHOT 01" },
+        { id: "ph2", placeholder: "PRODUCT SHOT 02 · DETAIL" },
+      ];
+
+  function go(i: number) {
+    const el = strip.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    setIndex(i);
   }
 
-  const wide = (i: number) => i === 0 && images.length % 2 === 1;
-
   return (
-    <div className="relative -mx-4 sm:-mx-6 md:mx-0">
+    <div>
       <div
+        ref={strip}
         onScroll={(e) => {
           const el = e.currentTarget;
-          if (el.scrollWidth > el.clientWidth) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+          const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+          if (i !== index) setIndex(i);
         }}
-        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] md:grid md:grid-cols-2 md:gap-2 md:overflow-visible"
-        aria-label={`${name} photos`}
         role="region"
+        aria-label={`${name} photos`}
+        tabIndex={0}
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-[22px]"
       >
-        {images.map((img, i) => (
-          <div key={img.id} className={cn("relative aspect-[4/5] w-full shrink-0 snap-center bg-mist md:w-auto", wide(i) && "md:col-span-2")}>
-            <Image
-              src={img.url}
-              alt={img.alt}
-              fill
-              priority={i === 0}
-              sizes={wide(i) ? "(min-width: 1280px) 720px, (min-width: 768px) 58vw, 100vw" : "(min-width: 1280px) 360px, (min-width: 768px) 29vw, 100vw"}
-              className="object-cover"
-            />
+        {shots.map((shot, i) => (
+          <div
+            key={shot.id}
+            className={cn("relative flex aspect-[4/5] flex-[0_0_100%] snap-start items-end p-4", "placeholder" in shot && (i % 2 ? "placeholder-stripes-alt" : "placeholder-stripes"))}
+          >
+            {"placeholder" in shot ? (
+              <span className={ui.caption("relative")}>{shot.placeholder}</span>
+            ) : (
+              <Image
+                src={shot.url}
+                alt={shot.alt}
+                fill
+                priority={i === 0}
+                sizes="(min-width: 640px) 50vw, 100vw"
+                className="object-cover"
+              />
+            )}
+            {i === 0 && lowStock && <span className={ui.tag("violet", "absolute top-3.5 right-3.5 px-3.5 py-2")}>LOW STOCK</span>}
           </div>
         ))}
       </div>
-      {images.length > 1 && (
-        <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden" aria-hidden>
-          {images.map((img, i) => (
-            <span key={img.id} className={cn("h-1 rounded-full transition-all", i === index ? "w-5 bg-ink" : "w-1.5 bg-ink/30")} />
+      {shots.length > 1 && (
+        <div className="mt-2.5 flex justify-center gap-1.5">
+          {shots.map((shot, i) => (
+            <button
+              key={shot.id}
+              type="button"
+              onClick={() => go(i)}
+              aria-label={`Show photo ${i + 1} of ${shots.length}`}
+              aria-current={i === index ? "true" : undefined}
+              className="flex h-8 w-10 items-center justify-center"
+            >
+              <span className={cn("block h-1.5 rounded-full transition-all duration-200", i === index ? "w-[22px] bg-ink" : "w-1.5 bg-rule")} />
+            </button>
           ))}
         </div>
       )}

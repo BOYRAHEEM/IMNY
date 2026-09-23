@@ -9,51 +9,79 @@ import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import type { DeliveryZone } from "@/lib/queries/settings";
 import { GHANA_REGIONS } from "@/lib/validation/checkout";
-import { readPrefs, writePrefs } from "./bag-view";
 import { useCart, useHydrated } from "./cart-store";
+import { readPrefs, writePrefs } from "./checkout-prefs";
+import { SummaryCard, SummaryRow, SummaryTotal, summaryButton } from "./summary-card";
+import { ui } from "./ui";
 import { useQuote } from "./use-quote";
 
+type Method = "momo" | "card" | "cod";
 type Props = { zones: DeliveryZone[]; currency: string; paymentFailed: boolean; testPayments: boolean };
+
+const METHODS: { key: Method; label: string }[] = [
+  { key: "momo", label: "MOBILE MONEY" },
+  { key: "card", label: "CARD" },
+  { key: "cod", label: "PAY ON DELIVERY" },
+];
 
 export function CheckoutView({ zones, currency, paymentFailed, testPayments }: Props) {
   const lines = useCart();
   const hydrated = useHydrated();
   const [zoneId, setZoneId] = useState<string>(zones.length === 1 ? zones[0].id : "");
+  const [method, setMethod] = useState<Method>("momo");
   const [code, setCode] = useState<string | null>(() => (typeof window === "undefined" ? null : readPrefs().code ?? null));
   const [codeInput, setCodeInput] = useState(code ?? "");
   const [email, setEmail] = useState("");
+  const [quotedEmail, setQuotedEmail] = useState<string | null>(null);
   const [submitting, startSubmit] = useTransition();
   const [formError, setFormError] = useState<string | null>(
-    paymentFailed ? "Your payment wasn't completed and you haven't been charged. Your bag is saved, so you can try again." : null,
+    paymentFailed ? "your payment wasn't completed and you haven't been charged. your bag is saved, so you can try again." : null,
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [summaryOpen, setSummaryOpen] = useState(false);
-
-  // Email only affects per-customer discount limits; don't re-quote on every keystroke.
-  const [quotedEmail, setQuotedEmail] = useState<string | null>(null);
   const { quote, error: quoteError, notices, loading } = useQuote(lines, { zoneId: zoneId || null, code, email: quotedEmail });
+
+  const zone = zones.find((z) => z.id === zoneId) ?? null;
+  const codZones = zones.filter((z) => z.allow_cod);
+  const codAllowed = Boolean(zone?.allow_cod);
+  const effectiveMethod: Method = method === "cod" && !codAllowed ? "momo" : method;
+
+  const header = (
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <h1 className={ui.h1()}>checkout</h1>
+      <Link href="/cart" className="border-b border-ink font-mono text-[11px] font-medium tracking-[0.14em]">
+        back to bag
+      </Link>
+    </div>
+  );
 
   if (!hydrated) {
     return (
-      <p className="flex items-center gap-2 py-10 text-sm text-muted">
-        <Spinner /> Loading checkout…
-      </p>
+      <section className={ui.section("grid gap-[clamp(24px,4vw,44px)]")}>
+        {header}
+        <p className="flex items-center gap-2 font-mono text-xs text-label">
+          <Spinner /> loading checkout…
+        </p>
+      </section>
     );
   }
 
   if (lines.length === 0) {
     return (
-      <div className="py-24 text-center">
-        <p className="font-display text-4xl">Your bag is waiting.</p>
-        <Link href="/shop" className="mt-8 inline-block bg-ink px-8 py-3.5 text-sm tracking-wide text-paper uppercase">
-          Continue shopping
-        </Link>
-      </div>
+      <section className={ui.section("grid gap-[clamp(24px,4vw,44px)]")}>
+        {header}
+        <div className="flex flex-col items-start gap-[18px] py-[clamp(32px,6vw,72px)]">
+          <p className="m-0 text-[clamp(20px,3vw,30px)] font-bold tracking-[-0.03em] text-copy">nothing in here yet.</p>
+          <Link href="/shop" className={ui.cta("px-[38px] py-[17px]")}>
+            GO SHOPPING
+          </Link>
+        </div>
+      </section>
     );
   }
 
   const money = (m: number) => formatMoney(m, quote?.currency ?? currency);
   const unavailable = quote?.lines.some((l) => l.status === "unavailable" || l.available <= 0);
+  const ready = Boolean(quote && zoneId && !unavailable && !loading && zones.length);
 
   function applyCode(value: string | null) {
     const next = value?.trim().toUpperCase() || null;
@@ -66,10 +94,10 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
     setFieldErrors({});
     const data = Object.fromEntries(new FormData(form).entries());
     startSubmit(async () => {
-      const result = await placeOrder({ ...data, zone_id: zoneId, discount_code: code ?? "" }, lines);
-      // On success the action redirects to the payment page.
+      const result = await placeOrder({ ...data, zone_id: zoneId, payment_method: effectiveMethod, discount_code: code ?? "" }, lines);
+      // On success the action redirects (to the payment page, or the confirmation for cash).
       if (result && !result.ok) {
-        setFormError(result.error);
+        setFormError(result.error.toLowerCase());
         setFieldErrors(result.fieldErrors ?? {});
         const first = result.fieldErrors && Object.keys(result.fieldErrors)[0];
         if (first) document.getElementById(`co-${first}`)?.focus();
@@ -78,285 +106,238 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
     });
   }
 
-  const summary = (
-    <div>
-      <ul className="space-y-4">
-        {quote?.lines.map((l) => (
-          <li key={l.variant_id} className="flex gap-3">
-            <div className="relative aspect-[4/5] w-16 shrink-0 bg-paper">
-              {l.image_url && <Image src={l.image_url} alt="" fill sizes="64px" className="object-cover" />}
-              <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-ink text-[11px] text-paper">
-                {l.quantity}
-              </span>
-            </div>
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="truncate">{l.product_name}</p>
-              {l.variant_title && <p className="text-muted">{l.variant_title}</p>}
-              {l.status !== "ok" && <p className="text-bad">{l.available > 0 ? `Only ${l.available} available` : "Sold out"}</p>}
-            </div>
-            <p className="text-sm tabular">{money(l.line_total_minor)}</p>
-          </li>
-        ))}
-      </ul>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          applyCode(codeInput);
-        }}
-        className="mt-6"
-      >
-        <label htmlFor="co-code" className="mb-1.5 block text-sm">
-          Discount code
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="co-code"
-            value={codeInput}
-            onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-            maxLength={32}
-            className="h-11 min-w-0 flex-1 border border-line-strong bg-paper px-3 text-sm uppercase focus:border-ink focus:outline-none"
-          />
-          {code ? (
-            <button type="button" onClick={() => { setCodeInput(""); applyCode(null); }} className="h-11 border border-line-strong bg-paper px-4 text-sm">
-              Remove
-            </button>
-          ) : (
-            <button type="submit" disabled={!codeInput.trim()} className="h-11 border border-ink bg-paper px-4 text-sm disabled:opacity-40">
-              Apply
-            </button>
-          )}
-        </div>
-        {quote?.discount?.message && (
-          <p role="alert" className="mt-1.5 text-sm text-bad">
-            {quote.discount.message}
-          </p>
-        )}
-      </form>
-
-      {quote && (
-        <dl className="mt-6 space-y-2 border-t border-line-strong pt-4 text-sm">
-          <div className="flex justify-between">
-            <dt>Subtotal</dt>
-            <dd className="tabular">{money(quote.subtotal_minor)}</dd>
-          </div>
-          {quote.discount_minor > 0 && (
-            <div className="flex justify-between text-good">
-              <dt>Discount ({quote.discount?.code})</dt>
-              <dd className="tabular">−{money(quote.discount_minor)}</dd>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <dt>Delivery</dt>
-            <dd className="tabular">{!quote.delivery_zone ? "Choose delivery" : quote.delivery_fee_minor ? money(quote.delivery_fee_minor) : "Free"}</dd>
-          </div>
-          <div className="flex justify-between border-t border-line-strong pt-3 text-base font-medium">
-            <dt>Total</dt>
-            <dd className="tabular">{money(quote.total_minor)}</dd>
-          </div>
-        </dl>
-      )}
-    </div>
-  );
-
-  const field = (name: string) => ({
+  const field = (name: string, extra?: string) => ({
     id: `co-${name}`,
     name,
     "aria-invalid": fieldErrors[name] ? true : undefined,
     "aria-describedby": fieldErrors[name] ? `co-${name}-error` : undefined,
-    className: cn(
-      "h-12 w-full border bg-paper px-3 text-base focus:border-ink focus:outline-none sm:text-sm",
-      fieldErrors[name] ? "border-bad" : "border-line-strong",
-    ),
+    className: ui.input(Boolean(fieldErrors[name]), extra),
   });
   const err = (name: string) =>
     fieldErrors[name] && (
-      <p id={`co-${name}-error`} className="mt-1 text-sm text-bad">
+      <p id={`co-${name}-error`} className="mt-1 mb-0 font-mono text-[11px] text-bad">
         {fieldErrors[name]}
       </p>
     );
-  const label = (name: string, text: string, optional?: boolean) => (
-    <label htmlFor={`co-${name}`} className="mb-1.5 block text-sm">
-      {text}
-      {optional && <span className="text-muted"> (optional)</span>}
-    </label>
-  );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_400px] lg:gap-16">
-      {/* Phones: collapsible summary at the top */}
-      <div className="border-y border-line lg:hidden">
-        <button type="button" onClick={() => setSummaryOpen((o) => !o)} aria-expanded={summaryOpen} className="flex h-14 w-full items-center justify-between text-sm">
-          <span className="underline underline-offset-4">{summaryOpen ? "Hide" : "Show"} order summary</span>
-          <span className="font-medium tabular">{quote ? money(quote.total_minor) : ""}</span>
-        </button>
-        {summaryOpen && <div className="bg-mist p-4">{summary}</div>}
-      </div>
+    <section className={ui.section("grid gap-[clamp(24px,4vw,44px)]")}>
+      {header}
 
       <form
+        id="checkout-form"
         onSubmit={(e) => {
           e.preventDefault();
           submit(e.currentTarget);
         }}
         noValidate
-        className="space-y-10"
+        className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-[clamp(24px,4vw,44px)]"
       >
-        {(formError || quoteError) && (
-          <p role="alert" className="border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
-            {formError ?? quoteError}
-          </p>
-        )}
-        {notices.length > 0 && (
-          <ul role="status" className="space-y-1 border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
-            {notices.map((n) => (
-              <li key={n}>{n}</li>
+        <div className="grid gap-7">
+          {(formError || quoteError) && (
+            <p role="alert" className="m-0 rounded-[20px] border border-bad/30 px-4 py-3 font-mono text-xs text-bad">
+              {formError ?? quoteError}
+            </p>
+          )}
+          {notices.map((n) => (
+            <p key={n} role="status" className="m-0 rounded-[20px] border border-violet/40 px-4 py-3 font-mono text-xs text-violet">
+              {n}
+            </p>
+          ))}
+
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={ui.label("mb-3.5 p-0")}>delivery details</legend>
+            <div className="grid gap-3.5">
+              <div>
+                <input {...field("name")} placeholder="full name" aria-label="Full name" autoComplete="name" required maxLength={120} />
+                {err("name")}
+              </div>
+              <div>
+                <input
+                  {...field("email")}
+                  type="email"
+                  placeholder="email (for your receipt)"
+                  aria-label="Email"
+                  autoComplete="email"
+                  inputMode="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => code && setQuotedEmail(email.trim().toLowerCase() || null)}
+                />
+                {err("email")}
+              </div>
+              <div>
+                <input {...field("phone")} type="tel" placeholder="phone number" aria-label="Phone number" autoComplete="tel" inputMode="tel" required />
+                {err("phone")}
+              </div>
+              <div>
+                <input {...field("line1")} placeholder="delivery address" aria-label="Delivery address" autoComplete="address-line1" required maxLength={200} />
+                {err("line1")}
+              </div>
+              <input {...field("line2")} placeholder="area / landmark (optional)" aria-label="Area or landmark" autoComplete="address-line2" maxLength={200} />
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <input {...field("city")} placeholder="city / town" aria-label="City or town" autoComplete="address-level2" required maxLength={80} />
+                  {err("city")}
+                </div>
+                <div>
+                  <select {...field("region", "cursor-pointer")} aria-label="Region" defaultValue="" required>
+                    <option value="" disabled>
+                      region
+                    </option>
+                    {GHANA_REGIONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r.toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                  {err("region")}
+                </div>
+              </div>
+              <div>
+                <input {...field("digital_address", "uppercase placeholder:normal-case")} placeholder="ghanapost gps (optional)" aria-label="GhanaPost GPS address" maxLength={20} />
+                {err("digital_address")}
+              </div>
+              <textarea {...field("instructions", "resize-y")} rows={2} maxLength={500} placeholder="delivery notes (optional)" aria-label="Delivery instructions" />
+            </div>
+          </fieldset>
+
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={ui.label("mb-3.5 p-0")}>delivery</legend>
+            {zones.length === 0 ? (
+              <p className="m-0 font-mono text-xs text-bad">delivery isn&apos;t available right now. please contact us to order.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Delivery area">
+                {zones.map((z) => (
+                  <button
+                    key={z.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={zoneId === z.id}
+                    onClick={() => setZoneId(z.id)}
+                    className={ui.choice(zoneId === z.id, "flex-col items-start gap-0.5 rounded-[22px] px-[18px] py-3 text-left")}
+                  >
+                    <span>{z.name.toUpperCase()}</span>
+                    <span className="font-medium tracking-normal opacity-70">
+                      {[z.estimated_days, z.fee_minor ? money(z.fee_minor) : "free"].filter(Boolean).join(" · ")}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {fieldErrors.zone_id && <p className="mt-2 mb-0 font-mono text-[11px] text-bad">{fieldErrors.zone_id}</p>}
+          </fieldset>
+
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={ui.label("mb-3.5 p-0")}>payment method</legend>
+            <div className="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Payment method">
+              {METHODS.filter((m) => m.key !== "cod" || codZones.length > 0).map((m) => {
+                const disabled = m.key === "cod" && !codAllowed;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={effectiveMethod === m.key}
+                    disabled={disabled}
+                    title={disabled ? `Only for ${codZones.map((z) => z.name).join(", ")}` : undefined}
+                    onClick={() => setMethod(m.key)}
+                    className={ui.choice(effectiveMethod === m.key, "px-[18px] py-3 tracking-[0.06em] disabled:opacity-35")}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="m-0 text-[13px] leading-relaxed text-caption">
+              {effectiveMethod === "cod"
+                ? `pay in cash when your order arrives in ${zone?.name.toLowerCase() ?? "your area"}.`
+                : effectiveMethod === "momo"
+                  ? "you'll approve the payment on your phone on paystack's secure page. mtn, telecel and airteltigo all work."
+                  : "you'll enter your card on paystack's secure page. we never see or store your card details."}
+              {codZones.length > 0 && !codAllowed && zone && ` pay on delivery is only available for ${codZones.map((z) => z.name.toLowerCase()).join(", ")}.`}
+            </p>
+          </fieldset>
+        </div>
+
+        <SummaryCard className="gap-5">
+          <ul className="m-0 grid list-none gap-3 p-0">
+            {quote?.lines.map((l) => (
+              <li key={l.variant_id} className="flex items-center gap-3 text-sm">
+                <div className="relative aspect-[4/5] w-11 shrink-0 overflow-hidden rounded-lg">
+                  {l.image_url ? <Image src={l.image_url} alt="" fill sizes="44px" className="object-cover" /> : <span className="placeholder-stripes absolute inset-0" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 truncate">{l.product_name}</p>
+                  <p className="m-0 text-xs text-label">
+                    {[l.variant_title, `× ${l.quantity}`].filter(Boolean).join(" · ")}
+                    {l.status !== "ok" && <span className="text-bad"> · {l.available > 0 ? `only ${l.available} left` : "sold out"}</span>}
+                  </p>
+                </div>
+                <span className="tabular">{money(l.line_total_minor)}</span>
+              </li>
             ))}
           </ul>
-        )}
 
-        <fieldset className="space-y-4">
-          <legend className="mb-4 text-sm tracking-wide uppercase">Contact</legend>
-          <div>
-            {label("name", "Full name")}
-            <input {...field("name")} autoComplete="name" required maxLength={120} />
-            {err("name")}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              {label("email", "Email")}
-              <input
-                {...field("email")}
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => code && setQuotedEmail(email.trim().toLowerCase() || null)}
-              />
-              {err("email")}
-            </div>
-            <div>
-              {label("phone", "Phone")}
-              <input {...field("phone")} type="tel" autoComplete="tel" inputMode="tel" required placeholder="024 123 4567" />
-              {err("phone")}
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset className="space-y-4">
-          <legend className="mb-4 text-sm tracking-wide uppercase">Delivery address</legend>
-          <div>
-            {label("line1", "Street address or house number")}
-            <input {...field("line1")} autoComplete="address-line1" required maxLength={200} />
-            {err("line1")}
-          </div>
-          <div>
-            {label("line2", "Area, landmark or apartment", true)}
-            <input {...field("line2")} autoComplete="address-line2" maxLength={200} />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              {label("city", "Town / city")}
-              <input {...field("city")} autoComplete="address-level2" required maxLength={80} />
-              {err("city")}
-            </div>
-            <div>
-              {label("region", "Region")}
-              <select {...field("region")} defaultValue="" required>
-                <option value="" disabled>
-                  Choose region
-                </option>
-                {GHANA_REGIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              {err("region")}
-            </div>
-          </div>
-          <div>
-            {label("digital_address", "GhanaPost GPS address", true)}
-            <input {...field("digital_address")} placeholder="GA-123-4567" maxLength={20} autoCapitalize="characters" />
-            {err("digital_address")}
-          </div>
-          <div>
-            {label("instructions", "Delivery instructions", true)}
-            <textarea
-              {...field("instructions")}
-              className={cn(field("instructions").className, "h-auto min-h-20 py-3")}
-              maxLength={500}
-              rows={3}
-              placeholder="e.g. Call when you arrive at the gate"
+          <div className="flex items-center gap-2 border-t border-rule-soft pt-5">
+            <label htmlFor="co-code" className="sr-only">
+              Discount code
+            </label>
+            <input
+              id="co-code"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyCode(codeInput);
+                }
+              }}
+              maxLength={32}
+              placeholder="Discount code"
+              className="h-10 min-w-0 flex-1 rounded-[10px] border border-rule-soft bg-paper px-3 text-sm uppercase placeholder:normal-case focus:border-ink focus:outline-none"
             />
+            {code ? (
+              <button type="button" onClick={() => { setCodeInput(""); applyCode(null); }} className="h-10 rounded-[10px] border border-rule-soft px-3 text-sm">
+                Remove
+              </button>
+            ) : (
+              <button type="button" onClick={() => applyCode(codeInput)} disabled={!codeInput.trim()} className="h-10 rounded-[10px] border border-ink px-3 text-sm disabled:opacity-40">
+                Apply
+              </button>
+            )}
           </div>
-        </fieldset>
-
-        <fieldset>
-          <legend className="mb-4 text-sm tracking-wide uppercase">Delivery</legend>
-          {zones.length === 0 ? (
-            <p className="text-sm text-bad">Delivery isn&apos;t available right now. Please contact us to order.</p>
-          ) : (
-            <div className="divide-y divide-line border border-line-strong" role="radiogroup" aria-label="Delivery options">
-              {zones.map((z) => (
-                <label key={z.id} className={cn("flex cursor-pointer items-start gap-3 p-4", zoneId === z.id && "bg-mist")}>
-                  <input
-                    type="radio"
-                    name="zone"
-                    value={z.id}
-                    checked={zoneId === z.id}
-                    onChange={() => setZoneId(z.id)}
-                    className="mt-0.5 size-5 accent-ink"
-                  />
-                  <span className="flex-1 text-sm">
-                    <span className="block">{z.name}</span>
-                    <span className="block text-muted">{[z.description, z.estimated_days].filter(Boolean).join(" · ")}</span>
-                  </span>
-                  <span className="text-sm tabular">
-                    {zoneId === z.id && quote?.delivery_zone?.id === z.id
-                      ? quote.delivery_fee_minor
-                        ? money(quote.delivery_fee_minor)
-                        : "Free"
-                      : z.fee_minor
-                        ? money(z.fee_minor)
-                        : "Free"}
-                  </span>
-                </label>
-              ))}
-            </div>
+          {quote?.discount?.message && (
+            <p role="alert" className="-mt-2 mb-0 text-sm text-bad">
+              {quote.discount.message}
+            </p>
           )}
-          {fieldErrors.zone_id && <p className="mt-1 text-sm text-bad">{fieldErrors.zone_id}</p>}
-        </fieldset>
 
-        <div>
-          <button
-            type="submit"
-            disabled={submitting || loading || !quote || unavailable || !zoneId || zones.length === 0}
-            className="flex h-14 w-full items-center justify-center gap-2 bg-ink text-sm tracking-wide text-paper uppercase hover:bg-ink-soft disabled:opacity-50"
-          >
+          {quote && (
+            <dl className="m-0 grid gap-3 text-sm text-label">
+              <SummaryRow label="Subtotal" value={money(quote.subtotal_minor)} />
+              {quote.discount_minor > 0 && <SummaryRow label={`Discount (${quote.discount?.code})`} value={`−${money(quote.discount_minor)}`} />}
+              <SummaryRow label="Delivery" value={!quote.delivery_zone ? "choose area" : quote.delivery_fee_minor ? money(quote.delivery_fee_minor) : "FREE"} />
+            </dl>
+          )}
+          <SummaryTotal value={quote ? money(quote.total_minor) : "—"} />
+          <button type="submit" form="checkout-form" disabled={!ready || submitting} className={summaryButton()}>
             {submitting ? (
               <>
-                <Spinner /> Taking you to payment…
+                <Spinner /> {effectiveMethod === "cod" ? "PLACING ORDER…" : "TAKING YOU THERE…"}
               </>
+            ) : effectiveMethod === "cod" ? (
+              "PLACE ORDER"
             ) : (
-              <>Pay {quote && zoneId ? money(quote.total_minor) : ""}</>
+              "CHECKOUT"
             )}
           </button>
-          <p className="mt-3 text-center text-xs text-muted">
-            {testPayments
-              ? "Test mode: no real payment will be taken."
-              : "You'll pay securely with card or mobile money on Paystack. We never see your card details."}
+          <p className={cn("m-0 text-center text-xs text-label", !zoneId && "text-violet")}>
+            {!zoneId ? "choose a delivery area to continue." : testPayments && effectiveMethod !== "cod" ? "test mode: no real payment will be taken." : "secure checkout"}
           </p>
-        </div>
+        </SummaryCard>
       </form>
-
-      <aside aria-label="Order summary" className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-        <div className="bg-mist p-6">
-          <h2 className="mb-5 text-sm tracking-wide uppercase">Order summary</h2>
-          {quote ? summary : <Spinner />}
-        </div>
-      </aside>
-    </div>
+    </section>
   );
 }

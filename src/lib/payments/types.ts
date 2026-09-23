@@ -14,6 +14,8 @@ export type InitializeInput = {
   currency: string;
   callbackUrl: string;
   metadata: Record<string, string>;
+  /** Payment method the customer picked; the gateway page opens on it. */
+  channel: "mobile_money" | "card";
 };
 
 export type VerifiedPayment = {

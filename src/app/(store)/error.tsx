@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { ui } from "@/components/store/ui";
 
 export default function StoreError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -9,17 +10,17 @@ export default function StoreError({ error, reset }: { error: Error & { digest?:
   }, [error]);
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-32 text-center">
-      <h1 className="font-display text-4xl">Something went wrong.</h1>
-      <p className="mt-4 text-muted">Please try again. If it keeps happening, contact us and we&apos;ll help.</p>
-      <div className="mt-8 flex justify-center gap-4">
-        <button type="button" onClick={reset} className="bg-ink px-8 py-3.5 text-sm tracking-wide text-paper uppercase">
-          Try again
+    <section className="flex flex-col items-start gap-6 px-[22px] py-[clamp(48px,9vw,120px)]">
+      <h1 className={ui.h1()}>something went wrong.</h1>
+      <p className="m-0 max-w-[46ch] text-[17px] leading-[1.6] text-copy">please try again. if it keeps happening, message us and we&apos;ll sort it.</p>
+      <div className="flex flex-wrap gap-2.5">
+        <button type="button" onClick={reset} className={ui.cta()}>
+          TRY AGAIN
         </button>
-        <Link href="/" className="px-4 py-3.5 text-sm underline underline-offset-4">
-          Home
+        <Link href="/" className={ui.ctaOutline()}>
+          HOME
         </Link>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BagLink, DesktopNav, MobileMenu } from "@/components/store/header-client";
-import { getCategories, safely } from "@/lib/queries/catalog";
+import { BagPill, CustomCursor, FooterSections, NavPills } from "@/components/store/chrome";
+import { splitList } from "@/content/site";
 import { getStoreSettings } from "@/lib/queries/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getStoreSettings();
-  const description = s.seo_description ?? s.tagline ?? undefined;
+  const description = s.seo_description ?? s.tagline ?? s.content.hero_text;
   return {
     title: { template: `%s | ${s.store_name}`, default: s.seo_title ?? s.store_name },
     description,
@@ -15,94 +15,76 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+const NAV = [
+  { href: "/shop", label: "shop" },
+  { href: "/lookbook", label: "lookbook" },
+  { href: "/about", label: "about" },
+  { href: "/contact", label: "contact" },
+];
+
+// Runs before first paint: hides the welcome screen for visitors who already
+// entered this session, so it never flashes.
+const GATE_SCRIPT = `try{if(sessionStorage.getItem("imny-entered")==="1")document.documentElement.setAttribute("data-imny-entered","1")}catch(e){}`;
+
 export default async function StoreLayout({ children }: LayoutProps<"/">) {
-  const [settings, categories] = await Promise.all([getStoreSettings(), safely("layout.categories", getCategories, [])]);
-  const topLevel = categories.filter((c) => !c.parent_id).slice(0, 6);
-  const links = [{ href: "/shop", label: "Shop all" }, ...topLevel.map((c) => ({ href: `/shop/${c.slug}`, label: c.name }))];
-  const social = Object.entries(settings.social_links ?? {}).filter(([, url]) => typeof url === "string" && url.startsWith("https://"));
+  const settings = await getStoreSettings();
+  const c = settings.content;
+  const messages = splitList(settings.announcement ?? "");
+  const socials = (["instagram", "tiktok", "facebook", "x"] as const)
+    .map((k) => ({ label: k === "x" ? "x" : k, href: settings.social_links?.[k] }))
+    .filter((s): s is { label: string; href: string } => typeof s.href === "string" && s.href.startsWith("https://"));
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-paper focus:px-3 focus:py-2">
+    <div className="imny flex min-h-dvh flex-col">
+      <script dangerouslySetInnerHTML={{ __html: GATE_SCRIPT }} />
+      <CustomCursor />
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[600] focus:rounded-full focus:bg-lime focus:px-4 focus:py-2 focus:font-mono focus:text-xs"
+      >
         Skip to content
       </a>
-      {settings.announcement && (
-        <p className="bg-ink px-4 py-2 text-center text-xs tracking-wide text-paper">{settings.announcement}</p>
-      )}
-      <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur">
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center">
-            <MobileMenu links={links} storeName={settings.store_name} />
-            <DesktopNav links={links.slice(0, 5)} />
-          </div>
-          <Link href="/" className="font-display text-2xl tracking-[0.12em] uppercase sm:text-3xl">
-            {settings.store_name}
+
+      <header className="sticky top-0 z-[500] bg-sand/[0.88] px-4 py-3 backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-3.5">
+          <Link href="/" className="flex flex-col gap-0.5 leading-none" aria-label={`${settings.store_name} home`}>
+            <span className="text-[23px] font-bold tracking-[-0.06em]">{settings.store_name}</span>
+            <span className="font-mono text-[9px] font-medium tracking-[0.16em] text-caption">{c.est_label}</span>
           </Link>
-          <div className="flex justify-end">
-            <BagLink />
-          </div>
+          <NavPills links={NAV} />
+          <BagPill />
         </div>
       </header>
+
+      {messages.length > 0 && (
+        <div className="overflow-hidden bg-violet py-2.5 text-bone" role="marquee" aria-label={messages.join(". ")}>
+          <div className="flex w-max animate-marquee" aria-hidden>
+            {[0, 1].map((copy) => (
+              <div key={copy} className="flex gap-[22px] pr-[22px] font-mono text-xs font-semibold tracking-[0.22em] whitespace-nowrap">
+                {[...messages, ...messages].map((m, i) => (
+                  <span key={i} className="flex gap-[22px]">
+                    <span>{m}</span>
+                    <span>·</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <main id="main" className="flex-1">
         {children}
       </main>
 
-      <footer className="mt-24 border-t border-line bg-mist">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-3 lg:px-10">
-          <div>
-            <p className="font-display text-2xl tracking-[0.12em] uppercase">{settings.store_name}</p>
-            {settings.tagline && <p className="mt-2 max-w-xs text-sm text-muted">{settings.tagline}</p>}
-          </div>
-          <div>
-            <h2 className="mb-3 text-xs tracking-widest text-muted uppercase">Shop</h2>
-            <ul className="space-y-2 text-sm">
-              {links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="hover:underline">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div hidden={!settings.contact_email && !settings.contact_phone && !settings.whatsapp_number && social.length === 0}>
-            <h2 className="mb-3 text-xs tracking-widest text-muted uppercase">Contact</h2>
-            <ul className="space-y-2 text-sm">
-              {settings.contact_email && (
-                <li>
-                  <a href={`mailto:${settings.contact_email}`} className="hover:underline">
-                    {settings.contact_email}
-                  </a>
-                </li>
-              )}
-              {settings.contact_phone && (
-                <li>
-                  <a href={`tel:${settings.contact_phone}`} className="hover:underline">
-                    {settings.contact_phone}
-                  </a>
-                </li>
-              )}
-              {settings.whatsapp_number && (
-                <li>
-                  <a href={`https://wa.me/${settings.whatsapp_number.replace(/\D/g, "")}`} className="hover:underline" rel="noopener" target="_blank">
-                    WhatsApp
-                  </a>
-                </li>
-              )}
-              {social.map(([name, url]) => (
-                <li key={name}>
-                  <a href={url} className="capitalize hover:underline" rel="noopener" target="_blank">
-                    {name === "x" ? "X" : name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <footer className="grid gap-[clamp(36px,6vw,64px)] px-[22px] pt-[clamp(40px,7vw,96px)] pb-[26px]">
+        <FooterSections heading={c.newsletter_heading} socials={socials} />
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-rule-card pt-[18px] font-mono text-[10px] tracking-[0.18em] text-caption">
+          <span>
+            © {new Date().getFullYear()} {settings.store_name}
+          </span>
+          <span>{c.city}</span>
         </div>
-        <p className="border-t border-line px-4 py-5 text-center text-xs text-muted">
-          © {new Date().getFullYear()} {settings.store_name}
-        </p>
       </footer>
     </div>
   );

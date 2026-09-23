@@ -10,7 +10,8 @@ import { publicEnv } from "@/lib/env";
 import { GENERIC_ERROR, logError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { orderToken, tokenHash } from "@/lib/order-links";
-import { getPaymentProvider, PaymentConfigError } from "@/lib/payments";
+import { sendOrderConfirmation } from "@/lib/email/order-confirmation";
+import { getPaymentProvider, PaymentConfigError, type PaymentProvider } from "@/lib/payments";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { checkoutSchema } from "@/lib/validation/checkout";
@@ -59,6 +60,7 @@ const INPUT_ERRORS: Record<string, string> = {
   INVALID_NAME: "Enter your full name.",
   INVALID_ADDRESS: "Enter your delivery address.",
   DELIVERY_ZONE_REQUIRED: "Choose a delivery option.",
+  COD_NOT_AVAILABLE: "Pay on delivery isn't available for that delivery area. Please choose mobile money or card.",
   GUEST_CHECKOUT_DISABLED: "Checkout is temporarily unavailable.",
 };
 
@@ -84,15 +86,18 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
   ]);
   if (!ipOk || !emailOk) return { ok: false, error: "Too many checkout attempts. Please wait a few minutes and try again." };
 
-  let provider;
-  try {
-    provider = getPaymentProvider();
-  } catch (err) {
-    logError("placeOrder.provider", err);
-    return {
-      ok: false,
-      error: err instanceof PaymentConfigError ? "Online payment isn't available right now. Please try again later." : GENERIC_ERROR,
-    };
+  const cod = f.payment_method === "cod";
+  let provider: PaymentProvider | null = null;
+  if (!cod) {
+    try {
+      provider = getPaymentProvider();
+    } catch (err) {
+      logError("placeOrder.provider", err);
+      return {
+        ok: false,
+        error: err instanceof PaymentConfigError ? "Online payment isn't available right now. Please try again later." : GENERIC_ERROR,
+      };
+    }
   }
 
   const db = createServiceClient();
@@ -100,12 +105,13 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
   const { error: releaseError } = await db.rpc("release_expired_reservations");
   if (releaseError) logError("placeOrder.release", releaseError);
 
-  const reference = `${provider.name === "dev" ? "DEV" : "IM"}_${randomBytes(12).toString("hex")}`;
+  const prefix = cod ? "COD" : provider!.name === "dev" ? "DEV" : "IM";
+  const reference = `${prefix}_${randomBytes(12).toString("hex")}`;
   // The token depends on the order id, which we only learn after inserting;
   // store a placeholder hash, then set the real one immediately after.
   const placeholder = tokenHash(randomBytes(32).toString("base64url"));
 
-  const { data, error } = await db.rpc("place_order", {
+  const common = {
     p_items: parsedLines.data,
     p_customer: { email: f.email, phone: f.phone, name: f.name },
     p_shipping: {
@@ -117,13 +123,14 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
       instructions: f.instructions,
     },
     p_delivery_zone_id: f.zone_id,
-    // Both accept NULL in SQL (no code / no account); the generated types don't express that.
+    // NULL is valid in SQL (no code); the generated types don't express that.
     p_discount_code: f.discount_code as string,
-    p_user_id: null as unknown as string,
-    p_payment_provider: provider.name,
     p_payment_reference: reference,
     p_access_token_hash: placeholder,
-  });
+  };
+  const { data, error } = cod
+    ? await db.rpc("place_cod_order", common)
+    : await db.rpc("place_order", { ...common, p_user_id: null as unknown as string, p_payment_provider: provider!.name });
 
   if (error) {
     const code = error.message?.match(/^[A-Z_]+$/)?.[0];
@@ -160,15 +167,22 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
 
   updateTag(TAGS.stock);
 
+  if (cod) {
+    // No payment step: the order is confirmed now and paid in cash on delivery.
+    await sendOrderConfirmation(orderId);
+    redirect(`/order-confirmation?${new URLSearchParams({ order: orderNumber, token, status: "cod" })}`);
+  }
+
   let authorizationUrl: string;
   try {
-    ({ authorizationUrl } = await provider.initialize({
+    ({ authorizationUrl } = await provider!.initialize({
       reference,
       email: f.email,
       amountMinor: result.total_minor!,
       currency: result.currency!,
       callbackUrl: `${publicEnv.NEXT_PUBLIC_SITE_URL}/checkout/return`,
       metadata: { order_id: orderId, order_number: orderNumber },
+      channel: f.payment_method === "momo" ? "mobile_money" : "card",
     }));
   } catch (err) {
     logError("placeOrder.initialize", err);

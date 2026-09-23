@@ -38,7 +38,8 @@ export const paystack: PaymentProvider = {
         reference: input.reference,
         callback_url: input.callbackUrl,
         metadata: input.metadata,
-        channels: ["card", "mobile_money", "bank", "bank_transfer", "ussd"],
+        // Open on the method the customer chose; the others stay as fallbacks.
+        channels: input.channel === "mobile_money" ? ["mobile_money", "card"] : ["card", "mobile_money"],
       }),
     });
     return { authorizationUrl: data.authorization_url };

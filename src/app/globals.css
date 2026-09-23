@@ -2,10 +2,12 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-serif), "Times New Roman", Georgia, serif;
+  --font-display: var(--font-poppins), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-system: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  /* Neutral, editorial palette */
-  --color-ink: #141414;
+  /* Neutrals (shared by the dashboard and the store) */
+  --color-ink: #14120f;
   --color-ink-soft: #3d3b38;
   --color-muted: #6b6760;
   --color-faint: #9b978f;
@@ -13,6 +15,20 @@
   --color-line-strong: #cfcbc4;
   --color-mist: #f6f5f2;
   --color-paper: #ffffff;
+
+  /* IMNY brand (storefront) */
+  --color-bone: #fbfaf8;
+  --color-sand: #f2f0ea;
+  --color-copy: #46423b;
+  --color-label: #6f6b63;
+  --color-caption: #8e897f;
+  --color-rule: #d7d2c8;
+  --color-rule-soft: #e5e2d9;
+  --color-rule-card: #ddd8ce;
+  --color-track: #ece9e0;
+  --color-lime: #c8f24a;
+  --color-violet: #8b5cf6;
+  --color-card-muted: #a8a49b;
 
   /* Status: always paired with an icon or label, never colour alone */
   --color-good: #1d6b45;
@@ -26,6 +42,28 @@
 
   --radius-xs: 2px;
   --radius-sm: 4px;
+
+  --animate-marquee: imny-marquee 24s linear infinite;
+  --animate-spin-slow: imny-spin 9s linear infinite;
+  --animate-bob: imny-bob 3.6s ease-in-out infinite;
+  --animate-page-in: imny-fade 180ms ease both;
+
+  @keyframes imny-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes imny-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes imny-bob {
+    0%, 100% { transform: rotate(-7deg) translateY(0); }
+    50% { transform: rotate(-7deg) translateY(-6px); }
+  }
+  @keyframes imny-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 @layer base {
@@ -54,4 +92,62 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Stand-in for photography until real images are uploaded. */
+@utility placeholder-stripes {
+  background-color: #e6e2d8;
+  background-image: repeating-linear-gradient(135deg, #e9e5dc 0 12px, #e1ddd2 12px 24px);
+}
+@utility placeholder-stripes-alt {
+  background-color: #dcd7cb;
+  background-image: repeating-linear-gradient(45deg, #e2ddd1 0 12px, #d7d2c5 12px 24px);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------------- Storefront ---------------- */
+.imny {
+  background: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+.imny ::selection {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+.imny input::placeholder,
+.imny textarea::placeholder {
+  color: #9a958c;
+}
+
+/* Welcome screen: hidden instantly for visitors who already entered this session. */
+html[data-imny-entered] .imny-gate {
+  display: none;
+}
+
+/* Custom cursor only for mouse users. */
+@media not all and (hover: hover) and (pointer: fine) {
+  .imny-cursor {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imny *,
+  .imny *::before,
+  .imny *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .imny-cursor {
+    display: none;
+  }
 }

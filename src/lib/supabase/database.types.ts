@@ -1167,6 +1167,7 @@ export type Database = {
           business_address: string | null
           contact_email: string | null
           contact_phone: string | null
+          content: Json
           currency: string
           free_delivery_over_minor: number | null
           hero_image_path: string | null
@@ -1191,6 +1192,7 @@ export type Database = {
           business_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          content?: Json
           currency?: string
           free_delivery_over_minor?: number | null
           hero_image_path?: string | null
@@ -1215,6 +1217,7 @@ export type Database = {
           business_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          content?: Json
           currency?: string
           free_delivery_over_minor?: number | null
           hero_image_path?: string | null

@@ -48,6 +48,7 @@ export const checkoutSchema = z.object({
     .transform((v) => v || null),
   instructions: optional(500),
   zone_id: z.uuid("Choose a delivery option."),
+  payment_method: z.enum(["momo", "card", "cod"], { error: "Choose how you'd like to pay." }),
   discount_code: z
     .string()
     .trim()
