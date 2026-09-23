@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isAdminLogin = pathname === "/admin/login";
+  const isAdminLogin = pathname === "/admin/login" || pathname === "/admin/forgot-password";
   const isAccountArea = pathname === "/account" || pathname.startsWith("/account/");
 
   if (!userId && isAdminArea && !isAdminLogin) {

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:db": "vitest run supabase/tests",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts"
   },
   "dependencies": {

@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-serif), "Times New Roman", Georgia, serif;
+
+  /* Neutral, editorial palette */
+  --color-ink: #141414;
+  --color-ink-soft: #3d3b38;
+  --color-muted: #6b6760;
+  --color-faint: #9b978f;
+  --color-line: #e6e3de;
+  --color-line-strong: #cfcbc4;
+  --color-mist: #f6f5f2;
+  --color-paper: #ffffff;
+
+  /* Status: always paired with an icon or label, never colour alone */
+  --color-good: #1d6b45;
+  --color-good-bg: #e9f4ee;
+  --color-warn: #8a5300;
+  --color-warn-bg: #fdf3e2;
+  --color-bad: #a8261b;
+  --color-bad-bg: #fcecea;
+  --color-info: #1f4f86;
+  --color-info-bg: #eaf1fa;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  /* iOS zooms inputs under 16px; keep form text at 16px on small screens */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
