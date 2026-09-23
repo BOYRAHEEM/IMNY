@@ -1154,7 +1154,56 @@ export type Database = {
         }
         Returns: number
       }
+      admin_customers: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: {
+          customer_id: string
+          email: string
+          first_seen_at: string
+          full_name: string
+          has_account: boolean
+          last_order_at: string
+          order_count: number
+          phone: string
+          total_count: number
+          total_spent_minor: number
+          user_id: string
+        }[]
+      }
       admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_inventory: {
+        Args: {
+          p_filter?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          available: number
+          on_hand: number
+          product_id: string
+          product_name: string
+          product_status: Database["public"]["Enums"]["product_status"]
+          reserved: number
+          sku: string
+          threshold: number
+          total_count: number
+          variant_active: boolean
+          variant_id: string
+          variant_title: string
+        }[]
+      }
+      admin_low_stock: {
+        Args: { p_limit?: number }
+        Returns: {
+          available: number
+          product_id: string
+          product_name: string
+          threshold: number
+          variant_id: string
+          variant_title: string
+        }[]
+      }
       admin_mark_refunded: {
         Args: { p_note?: string; p_order_id: string }
         Returns: undefined
@@ -1162,6 +1211,24 @@ export type Database = {
       admin_resolve_attention: {
         Args: { p_note: string; p_order_id: string }
         Returns: undefined
+      }
+      admin_save_product: { Args: { p: Json }; Returns: string }
+      admin_set_role_by_email: {
+        Args: {
+          p_email: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: undefined
+      }
+      admin_team: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
       }
       admin_update_order_status: {
         Args: {
@@ -1248,6 +1315,10 @@ export type Database = {
           product_id: string
           variant_id: string
         }[]
+      }
+      variant_title: {
+        Args: { v: Database["public"]["Tables"]["product_variants"]["Row"] }
+        Returns: string
       }
     }
     Enums: {
