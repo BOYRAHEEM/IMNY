@@ -44,7 +44,7 @@ export async function updateOrderStatus(_prev: ActionResult | null, formData: Fo
   if (error) return failure("updateOrderStatus", error);
 
   // Cancelling can return stock to the shelf.
-  if (parsed.data.status === "cancelled") updateTag(TAGS.catalog);
+  if (parsed.data.status === "cancelled") updateTag(TAGS.stock);
   refresh();
   return { ok: true, data: undefined, message: parsed.data.status === "cancelled" ? "Order cancelled." : "Status updated." };
 }

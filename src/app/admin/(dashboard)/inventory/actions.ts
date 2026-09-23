@@ -29,6 +29,6 @@ export async function updateStock(_prev: ActionResult<{ on_hand: number }> | nul
   });
   if (error) return failure("updateStock", error);
 
-  updateTag(TAGS.catalog);
+  updateTag(TAGS.stock);
   return { ok: true, data: { on_hand: data ?? parsed.data.on_hand }, message: "Saved" };
 }

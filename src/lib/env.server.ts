@@ -10,6 +10,7 @@ import { z } from "zod";
 const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   PAYSTACK_SECRET_KEY: z.string().regex(/^sk_(test|live)_/, "Must be a Paystack secret key"),
+  ORDER_LINK_SECRET: z.string().min(32, "Use at least 32 random characters"),
   RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
 });

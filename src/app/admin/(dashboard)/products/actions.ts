@@ -12,6 +12,7 @@ import { productPayloadSchema } from "@/lib/validation/product";
 
 function expireProductCaches(...slugs: Array<string | null | undefined>) {
   updateTag(TAGS.catalog);
+  updateTag(TAGS.stock);
   for (const slug of new Set(slugs.filter(Boolean) as string[])) updateTag(TAGS.product(slug));
 }
 

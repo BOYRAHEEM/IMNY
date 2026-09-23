@@ -4,6 +4,7 @@
  */
 export const TAGS = {
   catalog: "catalog", // product lists, categories, search
+  stock: "stock", // availability; expired by checkout and payment confirmation
   settings: "settings", // store settings and delivery zones
   product: (slug: string) => `product:${slug}`,
 } as const;

@@ -201,6 +201,30 @@ describe("admin functions", () => {
     await rejects(as(db, { role: "authenticated", uid: staff }, () => db.query(`select * from admin_team()`)), "FORBIDDEN");
   });
 
+  it("storefront listing shows only published products with prices, stock and swatches", async () => {
+    const live = teePayload();
+    live.name = "Storefront Listed Tee";
+    live.variants[0].price_minor = 12000;
+    live.variants.forEach((v: Payload) => (v.on_hand = 0));
+    await save(staff, live);
+    const draft = teePayload();
+    draft.name = "Storefront Draft Tee";
+    draft.status = "draft";
+    await save(staff, draft);
+
+    const rows = await as(db, { role: "anon" }, async () =>
+      (await db.query<any>(`select * from storefront_products(p_search => 'Storefront', p_sort => 'price_asc')`)).rows,
+    );
+    expect(rows.map((r) => r.name)).toEqual(["Storefront Listed Tee"]);
+    expect(rows[0]).toMatchObject({ price_min: 12000, price_max: 15000, available: 0 });
+    expect(rows[0].swatches).toEqual([
+      { value: "Black", hex: "#000000" },
+      { value: "White", hex: "#FFFFFF" },
+    ]);
+    expect(rows[0].image_path).toBe(live.images[1].storage_path); // the primary image
+    expect(rows[0].hover_image_path).toBe(live.images[0].storage_path);
+  });
+
   it("inventory report filters low and out-of-stock variants", async () => {
     const p = teePayload();
     p.name = "Filter Test Hoodie";

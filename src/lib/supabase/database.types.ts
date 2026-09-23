@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1307,6 +1307,35 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      storefront_products: {
+        Args: {
+          p_category_id?: string
+          p_exclude?: string
+          p_featured?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          available: number
+          category_id: string
+          compare_at_min: number
+          hover_image_path: string
+          id: string
+          image_alt: string
+          image_height: number
+          image_path: string
+          image_width: number
+          name: string
+          price_max: number
+          price_min: number
+          published_at: string
+          slug: string
+          swatches: Json
+          total_count: number
+        }[]
       }
       variant_availability: {
         Args: { p_product_ids: string[] }

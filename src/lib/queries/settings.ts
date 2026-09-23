@@ -63,6 +63,39 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   }
 }
 
+export type DeliveryZone = {
+  id: string;
+  name: string;
+  description: string | null;
+  fee_minor: number;
+  free_over_minor: number | null;
+  estimated_days: string | null;
+};
+
+const loadZones = unstable_cache(
+  async (): Promise<DeliveryZone[]> => {
+    const { data, error } = await createPublicClient()
+      .from("delivery_zones")
+      .select("id, name, description, fee_minor, free_over_minor, estimated_days")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name");
+    if (error) throw error;
+    return data;
+  },
+  ["delivery-zones"],
+  { tags: [TAGS.settings], revalidate: 3600 },
+);
+
+export async function getDeliveryZones(): Promise<DeliveryZone[]> {
+  try {
+    return await loadZones();
+  } catch (err) {
+    logError("getDeliveryZones", err);
+    return [];
+  }
+}
+
 export async function getStoreName(): Promise<string> {
   return (await getStoreSettings()).store_name;
 }

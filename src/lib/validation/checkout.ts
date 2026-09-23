@@ -1,0 +1,59 @@
+import { z } from "zod";
+
+export const GHANA_REGIONS = [
+  "Greater Accra",
+  "Ashanti",
+  "Central",
+  "Eastern",
+  "Western",
+  "Western North",
+  "Volta",
+  "Oti",
+  "Northern",
+  "Savannah",
+  "North East",
+  "Upper East",
+  "Upper West",
+  "Bono",
+  "Bono East",
+  "Ahafo",
+] as const;
+
+const trimmed = (min: number, max: number, message: string) => z.string().trim().min(min, message).max(max, message);
+const optional = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => v || null);
+
+export const checkoutSchema = z.object({
+  name: trimmed(2, 120, "Enter your full name."),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address.").max(254)),
+  phone: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s()-]/g, ""))
+    .pipe(z.string().regex(/^\+?\d{9,15}$/, "Enter a valid phone number, e.g. 024 123 4567.")),
+  line1: trimmed(3, 200, "Enter your street address or house number."),
+  line2: optional(200),
+  city: trimmed(2, 80, "Enter your town or city."),
+  region: z.enum(GHANA_REGIONS, { error: "Choose your region." }),
+  digital_address: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(20)
+    .refine((v) => v === "" || /^[A-Z]{2}-?\d{3,4}-?\d{3,4}$/.test(v), "GhanaPost GPS addresses look like GA-123-4567.")
+    .transform((v) => v || null),
+  instructions: optional(500),
+  zone_id: z.uuid("Choose a delivery option."),
+  discount_code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(32)
+    .transform((v) => v || null),
+});
+
+export type CheckoutInput = z.input<typeof checkoutSchema>;
