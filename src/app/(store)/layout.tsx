@@ -50,22 +50,23 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
       </a>
 
       <header className="sticky top-0 z-[500] bg-sand/[0.88] px-4 py-3 backdrop-blur-md">
-        {/* Phones: wordmark centred, bag right, nav on its own row.
-            Desktop: wordmark left, nav middle, bag right (as designed). */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 md:flex md:justify-between">
-          <span className="md:hidden" aria-hidden />
-          <Link href="/" className="flex flex-col items-center gap-0.5 leading-none md:items-start" aria-label={`${settings.store_name} home`}>
+        {/* Wordmark always centred. Phones: bag right, nav on its own row.
+            Desktop: nav left, bag right. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3.5">
+          <div className="min-w-0">
+            <div className="hidden lg:block">
+              <NavPills links={NAV} />
+            </div>
+          </div>
+          <Link href="/" className="flex flex-col items-center gap-0.5 leading-none" aria-label={`${settings.store_name} home`}>
             <span className="text-[23px] font-bold tracking-[-0.06em]">{settings.store_name}</span>
             <span className="font-mono text-[9px] font-medium tracking-[0.16em] text-caption">{c.est_label}</span>
           </Link>
-          <div className="hidden md:block">
-            <NavPills links={NAV} />
-          </div>
           <div className="flex justify-end">
             <BagPill />
           </div>
         </div>
-        <div className="mt-3 flex justify-center md:hidden">
+        <div className="mt-3 flex justify-center lg:hidden">
           <NavPills links={NAV} />
         </div>
       </header>

@@ -36,16 +36,8 @@ export const checkoutSchema = z.object({
     .transform((v) => v.replace(/[\s()-]/g, ""))
     .pipe(z.string().regex(/^\+?\d{9,15}$/, "Enter a valid phone number, e.g. 024 123 4567.")),
   line1: trimmed(3, 200, "Enter your street address or house number."),
-  line2: optional(200),
   city: trimmed(2, 80, "Enter your town or city."),
   region: z.enum(GHANA_REGIONS, { error: "Choose your region." }),
-  digital_address: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .max(20)
-    .refine((v) => v === "" || /^[A-Z]{2}-?\d{3,4}-?\d{3,4}$/.test(v), "GhanaPost GPS addresses look like GA-123-4567.")
-    .transform((v) => v || null),
   instructions: optional(500),
   payment_method: z.enum(["momo", "card", "cod"], { error: "Choose how you'd like to pay." }),
   discount_code: z

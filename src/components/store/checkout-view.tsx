@@ -176,7 +176,6 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
                 <input {...field("line1")} placeholder="delivery address" aria-label="Delivery address" autoComplete="address-line1" required maxLength={200} />
                 {err("line1")}
               </div>
-              <input {...field("line2")} placeholder="area / landmark (optional)" aria-label="Area or landmark" autoComplete="address-line2" maxLength={200} />
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <input {...field("city")} placeholder="city / town" aria-label="City or town" autoComplete="address-level2" required maxLength={80} />
@@ -195,10 +194,6 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
                   </select>
                   {err("region")}
                 </div>
-              </div>
-              <div>
-                <input {...field("digital_address", "uppercase placeholder:normal-case")} placeholder="ghanapost gps (optional)" aria-label="GhanaPost GPS address" maxLength={20} />
-                {err("digital_address")}
               </div>
               <textarea {...field("instructions", "resize-y")} rows={2} maxLength={500} placeholder="delivery notes (optional)" aria-label="Delivery instructions" />
             </div>

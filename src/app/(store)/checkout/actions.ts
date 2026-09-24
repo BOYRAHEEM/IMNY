@@ -135,10 +135,8 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
     p_customer: { email: f.email, phone: f.phone, name: f.name },
     p_shipping: {
       line1: f.line1,
-      line2: f.line2,
       city: f.city,
       region: f.region,
-      digital_address: f.digital_address,
       instructions: f.instructions,
     },
     p_delivery_zone_id: zoneId,
