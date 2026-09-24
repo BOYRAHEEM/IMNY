@@ -35,7 +35,7 @@ describe("pay on delivery, lookbook, newsletter and messages", () => {
     variant = v.id;
     await db.query(`update inventory set on_hand = 5 where variant_id = $1`, [variant]);
     codZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, allow_cod, regions) values ('Accra', 8000, true, '{Greater Accra}') returning id`)).rows[0].id;
-    onlineZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, regions) values ('Rest of Ghana', 8000, '{Ashanti,Volta}') returning id`)).rows[0].id;
+    onlineZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, regions) values ('Nationwide', 8000, '{Ashanti,Volta}') returning id`)).rows[0].id;
   }, 60_000);
 
   it("resolves the delivery zone from the region", async () => {
@@ -47,7 +47,7 @@ describe("pay on delivery, lookbook, newsletter and messages", () => {
   });
 
   it("rejects an order whose zone doesn't cover the delivery region", async () => {
-    // A Greater Accra address can't be charged the Rest of Ghana zone (or vice versa).
+    // A Greater Accra address can't be charged the Nationwide zone (or vice versa).
     await rejects(
       as(db, { role: "service_role" }, () =>
         db.query(`select place_order($1, $2, $3, $4, null, null, 'paystack', $5, $6)`, [
