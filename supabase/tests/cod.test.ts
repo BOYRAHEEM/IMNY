@@ -34,9 +34,34 @@ describe("pay on delivery, lookbook, newsletter and messages", () => {
     const { rows: [v] } = await db.query<{ id: string }>(`insert into product_variants (product_id, price_minor) values ($1, 90000) returning id`, [p.id]);
     variant = v.id;
     await db.query(`update inventory set on_hand = 5 where variant_id = $1`, [variant]);
-    codZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, allow_cod) values ('Accra', 8000, true) returning id`)).rows[0].id;
-    onlineZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor) values ('Rest of Ghana', 8000) returning id`)).rows[0].id;
+    codZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, allow_cod, regions) values ('Accra', 8000, true, '{Greater Accra}') returning id`)).rows[0].id;
+    onlineZone = (await db.query<{ id: string }>(`insert into delivery_zones (name, fee_minor, regions) values ('Rest of Ghana', 8000, '{Ashanti,Volta}') returning id`)).rows[0].id;
   }, 60_000);
+
+  it("resolves the delivery zone from the region", async () => {
+    const zone = (region: string) =>
+      as(db, { role: "anon" }, async () => (await db.query<{ z: string | null }>(`select delivery_zone_for_region($1) as z`, [region])).rows[0].z);
+    expect(await zone("Greater Accra")).toBe(codZone);
+    expect(await zone("Ashanti")).toBe(onlineZone);
+    expect(await zone("Upper West")).toBeNull();
+  });
+
+  it("rejects an order whose zone doesn't cover the delivery region", async () => {
+    // A Greater Accra address can't be charged the Rest of Ghana zone (or vice versa).
+    await rejects(
+      as(db, { role: "service_role" }, () =>
+        db.query(`select place_order($1, $2, $3, $4, null, null, 'paystack', $5, $6)`, [
+          JSON.stringify([{ variant_id: variant, quantity: 1 }]),
+          JSON.stringify({ email: "x@example.com", phone: "0241234567", name: "X" }),
+          JSON.stringify({ line1: "1 Oxford St", city: "Accra", region: "Greater Accra" }),
+          onlineZone,
+          `IM_${randomUUID().slice(0, 12)}`,
+          HASH,
+        ]),
+      ),
+      "ZONE_REGION_MISMATCH",
+    );
+  });
 
   it("refuses pay on delivery outside zones that allow it", async () => {
     await rejects(placeCod(onlineZone), "COD_NOT_AVAILABLE");

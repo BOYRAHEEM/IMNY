@@ -47,7 +47,6 @@ export const checkoutSchema = z.object({
     .refine((v) => v === "" || /^[A-Z]{2}-?\d{3,4}-?\d{3,4}$/.test(v), "GhanaPost GPS addresses look like GA-123-4567.")
     .transform((v) => v || null),
   instructions: optional(500),
-  zone_id: z.uuid("Choose a delivery option."),
   payment_method: z.enum(["momo", "card", "cod"], { error: "Choose how you'd like to pay." }),
   discount_code: z
     .string()

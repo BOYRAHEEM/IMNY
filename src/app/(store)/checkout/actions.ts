@@ -14,14 +14,25 @@ import { sendOrderConfirmation } from "@/lib/email/order-confirmation";
 import { getPaymentProvider, PaymentConfigError, type PaymentProvider } from "@/lib/payments";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { checkoutSchema } from "@/lib/validation/checkout";
+import { checkoutSchema, GHANA_REGIONS } from "@/lib/validation/checkout";
 
 export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: string };
+
+/** The delivery zone for a region, decided by the database (never by the browser). */
+async function zoneIdForRegion(region: string | null | undefined): Promise<string | null> {
+  if (!region || !(GHANA_REGIONS as readonly string[]).includes(region)) return null;
+  const { data, error } = await createServiceClient().rpc("delivery_zone_for_region", { p_region: region });
+  if (error) {
+    logError("zoneIdForRegion", error);
+    return null;
+  }
+  return data ?? null;
+}
 
 /** Re-price the bag on the server. Called by the bag and checkout pages. */
 export async function getQuote(input: {
   lines: unknown;
-  zoneId?: string | null;
+  region?: string | null;
   code?: string | null;
   email?: string | null;
 }): Promise<QuoteResult> {
@@ -38,7 +49,7 @@ export async function getQuote(input: {
 
   try {
     const quote = await priceCart(parsed.data, {
-      zoneId: input.zoneId && /^[0-9a-f-]{36}$/i.test(input.zoneId) ? input.zoneId : null,
+      zoneId: await zoneIdForRegion(input.region),
       code,
       email: input.email?.slice(0, 254) ?? null,
       format: formatMoney,
@@ -59,7 +70,8 @@ const INPUT_ERRORS: Record<string, string> = {
   INVALID_PHONE: "Enter a valid phone number.",
   INVALID_NAME: "Enter your full name.",
   INVALID_ADDRESS: "Enter your delivery address.",
-  DELIVERY_ZONE_REQUIRED: "Choose a delivery option.",
+  DELIVERY_ZONE_REQUIRED: "We don't deliver to that region yet.",
+  ZONE_REGION_MISMATCH: "We couldn't work out delivery for that region. Please check your address.",
   COD_NOT_AVAILABLE: "Pay on delivery isn't available for that delivery area. Please choose mobile money or card.",
   GUEST_CHECKOUT_DISABLED: "Checkout is temporarily unavailable.",
 };
@@ -85,6 +97,13 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
     rateLimit(`checkout:email:${f.email}`, 8, 600),
   ]);
   if (!ipOk || !emailOk) return { ok: false, error: "Too many checkout attempts. Please wait a few minutes and try again." };
+
+  // The delivery zone comes from the address, never from the browser.
+  const zoneId = await zoneIdForRegion(f.region);
+  if (!zoneId) {
+    const message = `We don't deliver to ${f.region} yet.`;
+    return { ok: false, error: message, fieldErrors: { region: message } };
+  }
 
   const cod = f.payment_method === "cod";
   let provider: PaymentProvider | null = null;
@@ -122,7 +141,7 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
       digital_address: f.digital_address,
       instructions: f.instructions,
     },
-    p_delivery_zone_id: f.zone_id,
+    p_delivery_zone_id: zoneId,
     // NULL is valid in SQL (no code); the generated types don't express that.
     p_discount_code: f.discount_code as string,
     p_payment_reference: reference,
@@ -151,7 +170,7 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
 
   if (!result.ok) {
     // Something changed (stock, price, discount). Return a fresh quote so the page can explain.
-    const fresh = await getQuote({ lines: parsedLines.data, zoneId: f.zone_id, code: f.discount_code, email: f.email });
+    const fresh = await getQuote({ lines: parsedLines.data, region: f.region, code: f.discount_code, email: f.email });
     return {
       ok: false,
       error: "Your bag changed while you were checking out. Please review it and try again.",

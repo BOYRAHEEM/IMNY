@@ -215,6 +215,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          regions: string[]
           sort_order: number
           updated_at: string
         }
@@ -228,6 +229,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          regions?: string[]
           sort_order?: number
           updated_at?: string
         }
@@ -241,6 +243,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          regions?: string[]
           sort_order?: number
           updated_at?: string
         }
@@ -1354,6 +1357,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      delivery_zone_for_region: { Args: { p_region: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       mark_order_paid: {

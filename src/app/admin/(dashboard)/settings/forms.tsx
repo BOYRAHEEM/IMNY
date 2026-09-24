@@ -6,6 +6,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { Checkbox, Field, FormMessage, Input, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { minorToInput } from "@/lib/money";
+import { GHANA_REGIONS } from "@/lib/validation/checkout";
 import { addTeamMember, changeTeamRole, deleteZone, refreshStorefront, saveSettings, saveZone } from "./actions";
 
 export type SettingsValues = {
@@ -141,6 +142,7 @@ export type ZoneValues = {
   sort_order: number;
   is_active: boolean;
   allow_cod: boolean;
+  regions: string[];
 };
 
 export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
@@ -167,9 +169,18 @@ export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
           <Input id="z-free" name="free_over" defaultValue={minorToInput(zone?.free_over_minor)} inputMode="decimal" placeholder="Never free" className="bg-paper" />
         </Field>
       </div>
-      <Field label="Areas covered" htmlFor="z-desc" optional hint="Shown to customers at checkout.">
+      <Field label="Description" htmlFor="z-desc" optional hint="Shown on the delivery page.">
         <Input id="z-desc" name="description" defaultValue={zone?.description ?? ""} maxLength={300} className="bg-paper" />
       </Field>
+      <fieldset>
+        <legend className="mb-1.5 text-sm font-medium">Regions this zone delivers to</legend>
+        <p className="mb-2 text-sm text-muted">The customer&apos;s region at checkout decides the zone automatically.</p>
+        <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-3">
+          {GHANA_REGIONS.map((r) => (
+            <Checkbox key={r} name="regions" value={r} label={r} defaultChecked={zone?.regions.includes(r) ?? false} />
+          ))}
+        </div>
+      </fieldset>
       <div className="flex flex-wrap items-end gap-4">
         <Field label="Order" htmlFor="z-order" className="w-24">
           <Input id="z-order" name="sort_order" type="number" inputMode="numeric" defaultValue={zone?.sort_order ?? 0} className="bg-paper" />

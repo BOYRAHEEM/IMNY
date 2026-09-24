@@ -9,6 +9,7 @@ import { TAGS } from "@/lib/cache-tags";
 import { failure, logError, type ActionResult } from "@/lib/errors";
 import { CATALOG_BUCKET } from "@/lib/images";
 import { parseMoneyInput } from "@/lib/money";
+import { GHANA_REGIONS } from "@/lib/validation/checkout";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateStore } from "@/lib/revalidate-store";
 import { ensureInvited } from "@/lib/team";
@@ -127,6 +128,7 @@ const zoneSchema = z.object({
   sort_order: z.coerce.number().int().min(-1000).max(1000),
   is_active: z.boolean(),
   allow_cod: z.boolean(),
+  regions: z.array(z.enum(GHANA_REGIONS)).min(1, "Tick at least one region this zone delivers to."),
 });
 
 export async function saveZone(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -144,12 +146,24 @@ export async function saveZone(_prev: ActionResult | null, formData: FormData): 
     sort_order: f("sort_order") || 0,
     is_active: formData.get("is_active") === "on",
     allow_cod: formData.get("allow_cod") === "on",
+    regions: formData.getAll("regions").map(String),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details and try again." };
 
   const { id, fee, free_over, ...rest } = parsed.data;
   const row = { ...rest, fee_minor: fee, free_over_minor: free_over };
   const supabase = await createClient();
+
+  // A region can belong to only one active zone, otherwise its price would be ambiguous.
+  if (row.is_active) {
+    let others = supabase.from("delivery_zones").select("name, regions").eq("is_active", true).overlaps("regions", row.regions);
+    if (id) others = others.neq("id", id);
+    const { data: clash } = await others;
+    if (clash?.length) {
+      const taken = row.regions.filter((r) => clash.some((c) => c.regions.includes(r)));
+      return { ok: false, error: `${taken.join(", ")} already ${taken.length === 1 ? "belongs" : "belong"} to "${clash[0].name}". Untick ${taken.length === 1 ? "it" : "them"} there first.` };
+    }
+  }
   const { error } = id ? await supabase.from("delivery_zones").update(row).eq("id", id) : await supabase.from("delivery_zones").insert(row);
   if (error) return failure("saveZone", error);
 

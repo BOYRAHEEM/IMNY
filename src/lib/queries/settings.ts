@@ -82,20 +82,22 @@ export type DeliveryZone = {
   free_over_minor: number | null;
   estimated_days: string | null;
   allow_cod: boolean;
+  /** Ghana regions this zone delivers to; the customer's region picks the zone. */
+  regions: string[];
 };
 
 const loadZones = unstable_cache(
   async (): Promise<DeliveryZone[]> => {
     const { data, error } = await createPublicClient()
       .from("delivery_zones")
-      .select("id, name, description, fee_minor, free_over_minor, estimated_days, allow_cod")
+      .select("id, name, description, fee_minor, free_over_minor, estimated_days, allow_cod, regions")
       .eq("is_active", true)
       .order("sort_order")
       .order("name");
     if (error) throw error;
     return data;
   },
-  ["delivery-zones-v2"],
+  ["delivery-zones-v3"],
   { tags: [TAGS.settings], revalidate: 3600 },
 );
 

@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { resolveContent } from "@/content/site";
 import { catalogImageUrl } from "@/lib/images";
+import { GHANA_REGIONS } from "@/lib/validation/checkout";
 import { AddTeamMemberForm, RefreshStoreForm, SettingsForm, TeamRoleForm, ZoneForm, type SettingsValues, type ZoneValues } from "./forms";
 import { ContentForm, SiteImageField } from "./site-forms";
 
@@ -35,6 +36,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   const team = teamRes.data ?? [];
   const editingZone = zoneParam && z.uuid().safeParse(zoneParam).success ? zones.find((zn) => zn.id === zoneParam) ?? null : null;
   const addingZone = zoneParam === "new";
+  const covered = new Set(zones.filter((zn) => zn.is_active).flatMap((zn) => zn.regions));
+  const uncovered = GHANA_REGIONS.filter((r) => !covered.has(r));
 
   return (
     <>
@@ -96,6 +99,11 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
                   Add at least one delivery zone. Customers can&apos;t check out until there is one.
                 </p>
               )}
+              {zones.length > 0 && uncovered.length > 0 && (
+                <p className="border border-warn/25 bg-warn-bg px-3 py-2.5 text-sm text-warn">
+                  No active zone delivers to {uncovered.join(", ")}. Customers there can&apos;t check out.
+                </p>
+              )}
               {addingZone && <ZoneForm zone={null} />}
               <ul className="divide-y divide-line border border-line">
                 {zones.map((zn) =>
@@ -113,7 +121,12 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
                             {zn.allow_cod && <Badge tone="info">Pay on delivery</Badge>}
                           </p>
                           <p className="truncate text-xs text-muted">
-                            {[zn.description, zn.estimated_days].filter(Boolean).join(" · ")}
+                            {[
+                              zn.regions.length === 0 ? "No regions" : zn.regions.length > 3 ? `${zn.regions.length} regions` : zn.regions.join(", "),
+                              zn.estimated_days,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                         </div>
                         <div className="text-right text-sm tabular">

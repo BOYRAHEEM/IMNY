@@ -74,7 +74,7 @@ async function seedCatalog(db: Db): Promise<Catalog> {
   await q(`update inventory set on_hand = 10 where variant_id = $1`, [osv.id]);
 
   const [zone] = await q(
-    `insert into delivery_zones (name, fee_minor, free_over_minor) values ('Accra', 2500, 100000) returning id`,
+    `insert into delivery_zones (name, fee_minor, free_over_minor, regions) values ('Accra', 2500, 100000, '{Greater Accra}') returning id`,
   );
 
   await q(`insert into discount_codes (code, type, value) values ('TENOFF', 'percentage', 10)`);

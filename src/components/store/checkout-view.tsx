@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { placeOrder } from "@/app/(store)/checkout/actions";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/cn";
+import { zoneForRegion } from "@/lib/delivery";
 import { formatMoney } from "@/lib/money";
 import type { DeliveryZone } from "@/lib/queries/settings";
 import { GHANA_REGIONS } from "@/lib/validation/checkout";
@@ -27,7 +28,7 @@ const METHODS: { key: Method; label: string }[] = [
 export function CheckoutView({ zones, currency, paymentFailed, testPayments }: Props) {
   const lines = useCart();
   const hydrated = useHydrated();
-  const [zoneId, setZoneId] = useState<string>(zones.length === 1 ? zones[0].id : "");
+  const [region, setRegion] = useState("");
   const [method, setMethod] = useState<Method>("momo");
   const [code, setCode] = useState<string | null>(() => (typeof window === "undefined" ? null : readPrefs().code ?? null));
   const [codeInput, setCodeInput] = useState(code ?? "");
@@ -38,9 +39,9 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
     paymentFailed ? "your payment wasn't completed and you haven't been charged. your bag is saved, so you can try again." : null,
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const { quote, error: quoteError, notices, loading } = useQuote(lines, { zoneId: zoneId || null, code, email: quotedEmail });
+  const { quote, error: quoteError, notices, loading } = useQuote(lines, { region: region || null, code, email: quotedEmail });
 
-  const zone = zones.find((z) => z.id === zoneId) ?? null;
+  const zone = zoneForRegion(zones, region);
   const codZones = zones.filter((z) => z.allow_cod);
   const codAllowed = Boolean(zone?.allow_cod);
   const effectiveMethod: Method = method === "cod" && !codAllowed ? "momo" : method;
@@ -81,7 +82,7 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
 
   const money = (m: number) => formatMoney(m, quote?.currency ?? currency);
   const unavailable = quote?.lines.some((l) => l.status === "unavailable" || l.available <= 0);
-  const ready = Boolean(quote && zoneId && !unavailable && !loading && zones.length);
+  const ready = Boolean(quote && zone && !unavailable && !loading);
 
   function applyCode(value: string | null) {
     const next = value?.trim().toUpperCase() || null;
@@ -94,7 +95,7 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
     setFieldErrors({});
     const data = Object.fromEntries(new FormData(form).entries());
     startSubmit(async () => {
-      const result = await placeOrder({ ...data, zone_id: zoneId, payment_method: effectiveMethod, discount_code: code ?? "" }, lines);
+      const result = await placeOrder({ ...data, payment_method: effectiveMethod, discount_code: code ?? "" }, lines);
       // On success the action redirects (to the payment page, or the confirmation for cash).
       if (result && !result.ok) {
         setFormError(result.error.toLowerCase());
@@ -182,7 +183,7 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
                   {err("city")}
                 </div>
                 <div>
-                  <select {...field("region", "cursor-pointer")} aria-label="Region" defaultValue="" required>
+                  <select {...field("region", "cursor-pointer")} aria-label="Region" value={region} onChange={(e) => setRegion(e.target.value)} required>
                     <option value="" disabled>
                       region
                     </option>
@@ -203,31 +204,27 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
             </div>
           </fieldset>
 
-          <fieldset className="m-0 border-0 p-0">
-            <legend className={ui.label("mb-3.5 p-0")}>delivery</legend>
-            {zones.length === 0 ? (
-              <p className="m-0 font-mono text-xs text-bad">delivery isn&apos;t available right now. please contact us to order.</p>
+          {/* Delivery is worked out from the region; nothing to pick. */}
+          <div aria-live="polite">
+            <p className={ui.label("mt-0 mb-2.5")}>delivery</p>
+            {!region ? (
+              <p className="m-0 text-[13px] text-caption">choose your region above to see delivery time and cost.</p>
+            ) : !zone ? (
+              <p className="m-0 text-[13px] text-bad">sorry, we don&apos;t deliver to {region.toLowerCase()} yet.</p>
             ) : (
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Delivery area">
-                {zones.map((z) => (
-                  <button
-                    key={z.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={zoneId === z.id}
-                    onClick={() => setZoneId(z.id)}
-                    className={ui.choice(zoneId === z.id, "flex-col items-start gap-0.5 rounded-[22px] px-[18px] py-3 text-left")}
-                  >
-                    <span>{z.name.toUpperCase()}</span>
-                    <span className="font-medium tracking-normal opacity-70">
-                      {[z.estimated_days, z.fee_minor ? money(z.fee_minor) : "free"].filter(Boolean).join(" · ")}
-                    </span>
-                  </button>
-                ))}
+              <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[22px] border border-ink px-[18px] py-3 font-mono text-xs font-semibold">
+                <span>{zone.name.toUpperCase()}</span>
+                <span className="font-medium text-label">
+                  {[
+                    zone.estimated_days,
+                    quote?.delivery_zone?.id === zone.id ? (quote.delivery_fee_minor ? money(quote.delivery_fee_minor) : "FREE") : money(zone.fee_minor),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
               </div>
             )}
-            {fieldErrors.zone_id && <p className="mt-2 mb-0 font-mono text-[11px] text-bad">{fieldErrors.zone_id}</p>}
-          </fieldset>
+          </div>
 
           <fieldset className="m-0 border-0 p-0">
             <legend className={ui.label("mb-3.5 p-0")}>payment method</legend>
@@ -333,8 +330,8 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
               "CHECKOUT"
             )}
           </button>
-          <p className={cn("m-0 text-center text-xs text-label", !zoneId && "text-violet")}>
-            {!zoneId ? "choose a delivery area to continue." : testPayments && effectiveMethod !== "cod" ? "test mode: no real payment will be taken." : "secure checkout"}
+          <p className={cn("m-0 text-center text-xs text-label", !zone && "text-violet")}>
+            {!region ? "add your delivery region to continue." : !zone ? "we don't deliver to that region yet." : testPayments && effectiveMethod !== "cod" ? "test mode: no real payment will be taken." : "secure checkout"}
           </p>
         </SummaryCard>
       </form>
