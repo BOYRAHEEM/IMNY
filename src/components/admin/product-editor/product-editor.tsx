@@ -125,12 +125,12 @@ export function ProductEditor({ initial, categories, isAdmin, notice }: Props) {
   return (
     <div className="pb-24">
       {error && (
-        <p ref={errorRef} role="alert" className="mb-4 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <p ref={errorRef} role="alert" className="mb-4 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           {error}
         </p>
       )}
       {message && !error && (
-        <p role="status" className="mb-4 border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
+        <p role="status" className="mb-4 rounded-2xl border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
           {message}
         </p>
       )}
@@ -328,7 +328,7 @@ export function ProductEditor({ initial, categories, isAdmin, notice }: Props) {
                 <p className="text-xs text-muted">Archiving hides the product but keeps it for your records.</p>
                 {isAdmin &&
                   (confirmDelete ? (
-                    <div className="space-y-2 border border-bad/25 bg-bad-bg p-3">
+                    <div className="space-y-2 rounded-2xl border border-bad/25 bg-bad-bg p-3">
                       <p className="text-sm text-bad">Delete permanently? Photos are removed too. Past orders keep their details.</p>
                       <div className="flex gap-2">
                         <Button variant="danger" size="sm" disabled={pending} onClick={remove}>

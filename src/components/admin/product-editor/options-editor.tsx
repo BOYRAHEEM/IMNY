@@ -119,7 +119,7 @@ function OptionCard({
   const valueId = `option-${option.id}-value`;
 
   return (
-    <div className="border border-line p-3 sm:p-4">
+    <div className="rounded-2xl border border-line p-3 sm:p-4">
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Label htmlFor={nameId}>Option {index + 1}</Label>
@@ -150,7 +150,7 @@ function OptionCard({
         {option.values.length > 0 && (
           <ul className="mb-2 flex flex-wrap gap-2">
             {option.values.map((v) => (
-              <li key={v.id} className="flex h-9 items-center gap-1.5 border border-line-strong bg-paper pr-1 pl-2 text-sm">
+              <li key={v.id} className="flex h-9 items-center gap-1.5 rounded-full border border-line-strong bg-paper pr-1 pl-3 text-sm">
                 {colour && (
                   <label className="relative size-5 shrink-0 cursor-pointer overflow-hidden rounded-full border border-line-strong" title="Pick swatch colour">
                     <span className="absolute inset-0" style={{ background: v.swatch_hex ?? "transparent" }} />
@@ -180,7 +180,7 @@ function OptionCard({
                 <button
                   type="button"
                   onClick={() => onChange({ values: option.values.filter((x) => x.id !== v.id) })}
-                  className="flex size-7 items-center justify-center rounded-sm text-muted hover:bg-mist hover:text-ink"
+                  className="flex size-7 items-center justify-center rounded-full text-muted hover:bg-mist hover:text-ink"
                   aria-label={`Remove ${v.value}`}
                 >
                   <Icon name="close" className="size-3.5" />

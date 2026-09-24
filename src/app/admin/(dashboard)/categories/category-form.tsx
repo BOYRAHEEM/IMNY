@@ -114,7 +114,7 @@ export function CategoryForm({
       {category?.id && canDelete && (
         <div className="border-t border-line pt-4">
           {confirming ? (
-            <div className="space-y-2 border border-bad/25 bg-bad-bg p-3">
+            <div className="space-y-2 rounded-2xl border border-bad/25 bg-bad-bg p-3">
               <p className="text-sm text-bad">
                 Delete this category?
                 {productCount > 0 && ` Its ${productCount} product${productCount === 1 ? "" : "s"} will stay in the store without a category.`}

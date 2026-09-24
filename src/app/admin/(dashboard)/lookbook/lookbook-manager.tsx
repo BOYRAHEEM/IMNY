@@ -58,14 +58,14 @@ export function LookbookManager({ looks }: { looks: Look[] }) {
   return (
     <div className="space-y-4">
       {errors.length > 0 && (
-        <ul role="alert" className="space-y-1 border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
+        <ul role="alert" className="space-y-1 rounded-xl border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
           {errors.map((e) => (
             <li key={e}>{e}</li>
           ))}
         </ul>
       )}
 
-      <label className="flex cursor-pointer flex-col items-center justify-center border border-dashed border-line-strong bg-paper px-4 py-8 text-center hover:bg-mist">
+      <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong bg-paper px-4 py-8 text-center hover:bg-mist">
         {uploading > 0 ? (
           <span className="flex items-center gap-2 text-sm">
             <Spinner /> Uploading {uploading} photo{uploading === 1 ? "" : "s"}…
@@ -133,16 +133,16 @@ function LookCard({
 }) {
   const [result, action] = useActionState(updateLookbookImage, null);
   const [confirm, setConfirm] = useState(false);
-  const btn = "flex size-9 items-center justify-center rounded-sm text-muted hover:bg-mist disabled:opacity-30";
+  const btn = "flex size-9 items-center justify-center rounded-full text-muted hover:bg-mist disabled:opacity-30";
   return (
-    <li className="border border-line bg-paper">
-      <div className="relative aspect-[3/4] bg-mist">
+    <li className="overflow-hidden rounded-2xl border border-line bg-paper">
+      <div className="relative aspect-[3/4] placeholder-stripes">
         <Image src={look.url} alt={look.alt_text ?? ""} fill sizes="(min-width: 1024px) 200px, 45vw" className="object-cover" />
       </div>
       <form action={action} className="space-y-2 p-2">
         <input type="hidden" name="id" value={look.id} />
-        <input name="label" defaultValue={look.label ?? ""} placeholder="Label, e.g. LOOK 01 · FULL LENGTH" aria-label="Label" maxLength={80} className="h-9 w-full rounded-sm border border-line px-2 text-xs focus:border-ink focus:outline-none" />
-        <input name="alt_text" defaultValue={look.alt_text ?? ""} placeholder="Describe the photo" aria-label="Image description" maxLength={300} className="h-9 w-full rounded-sm border border-line px-2 text-xs focus:border-ink focus:outline-none" />
+        <input name="label" defaultValue={look.label ?? ""} placeholder="Label, e.g. LOOK 01 · FULL LENGTH" aria-label="Label" maxLength={80} className="h-9 w-full rounded-lg border border-line px-2 text-xs focus:border-ink focus:outline-none" />
+        <input name="alt_text" defaultValue={look.alt_text ?? ""} placeholder="Describe the photo" aria-label="Image description" maxLength={300} className="h-9 w-full rounded-lg border border-line px-2 text-xs focus:border-ink focus:outline-none" />
         <div className="flex items-center justify-between">
           <div className="flex">
             <button type="button" className={btn} onClick={() => onMove(-1)} disabled={first || busy} aria-label="Move earlier">
@@ -152,7 +152,7 @@ function LookCard({
               <Icon name="right" className="size-4" />
             </button>
             {confirm ? (
-              <button type="button" className="ml-1 rounded-sm px-2 text-xs text-bad hover:bg-bad-bg" onClick={onDelete} disabled={busy}>
+              <button type="button" className="ml-1 rounded-lg px-2 text-xs text-bad hover:bg-bad-bg" onClick={onDelete} disabled={busy}>
                 Delete?
               </button>
             ) : (

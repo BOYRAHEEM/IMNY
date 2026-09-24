@@ -25,7 +25,7 @@ export function VariantsEditor({ options, variants, onChange }: Props) {
 
   return (
     <div>
-      <div className="mb-4 grid gap-2 border border-line bg-mist p-3 sm:grid-cols-2">
+      <div className="mb-4 grid gap-2 rounded-2xl border border-line bg-mist p-3 sm:grid-cols-2">
         <BulkField
           label="Set price for all"
           placeholder="0.00"

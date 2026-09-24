@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { z } from "zod";
 import { Icon } from "@/components/admin/icons";
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader, filterTab } from "@/components/admin/page-header";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/status";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/form";
 import { requireStaffPage } from "@/lib/auth";
-import { cn } from "@/lib/cn";
 import { logError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
@@ -82,7 +81,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       <PageHeader title="Orders" />
 
       {(attention || customer) && (
-        <p className="mb-4 flex items-center justify-between gap-3 border border-line bg-paper px-4 py-2.5 text-sm">
+        <p className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-paper px-4 py-2.5 text-sm">
           <span>{attention ? "Showing orders that need attention." : "Showing orders for one customer."}</span>
           <Link href="/admin/orders" className="text-muted underline underline-offset-4 hover:text-ink">
             Show all
@@ -91,16 +90,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       )}
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <nav aria-label="Filter orders" className="-mx-1 flex gap-1 overflow-x-auto px-1">
+        <nav aria-label="Filter orders" className="-mx-1 flex gap-1.5 overflow-x-auto no-scrollbar px-1">
           {VIEWS.map((v) => (
             <Link
               key={v.key}
               href={hrefFor({ status: v.key, page: undefined })}
               aria-current={view === v.key ? "page" : undefined}
-              className={cn(
-                "h-9 shrink-0 rounded-sm px-3 text-sm leading-9",
-                view === v.key ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper",
-              )}
+              className={filterTab(view === v.key)}
             >
               {v.label}
             </Link>
@@ -114,7 +110,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       </div>
 
       {error && (
-        <p role="alert" className="mb-4 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <p role="alert" className="mb-4 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           Orders couldn&apos;t be loaded. Refresh to try again.
         </p>
       )}
@@ -125,7 +121,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           description={filtered ? "Try a different filter or search." : "When customers check out, their orders will appear here."}
         />
       ) : (
-        <div className="border border-line bg-paper">
+        <div className="overflow-hidden rounded-3xl border border-line bg-paper">
           <div className="hidden grid-cols-[130px_minmax(0,1fr)_110px_220px_120px] gap-4 border-b border-line px-4 py-2 text-xs font-medium text-muted lg:grid">
             <span>Order</span>
             <span>Customer</span>

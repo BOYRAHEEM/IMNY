@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader, filterTab } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireStaffPage } from "@/lib/auth";
-import { cn } from "@/lib/cn";
 import { logError } from "@/lib/errors";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -30,16 +29,15 @@ export default async function InboxPage({ searchParams }: PageProps<"/admin/inbo
   if (messages.error) logError("inbox.messages", messages.error);
   if (subscribers.error) logError("inbox.subscribers", subscribers.error);
 
-  const tabClass = (active: boolean) => cn("h-9 rounded-sm px-3 text-sm leading-9", active ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper");
 
   return (
     <>
       <PageHeader title="Inbox" description="Messages from the contact page and newsletter sign-ups." />
-      <nav aria-label="Inbox" className="mb-4 flex gap-1">
-        <Link href="/admin/inbox" aria-current={tab === "messages" ? "page" : undefined} className={tabClass(tab === "messages")}>
+      <nav aria-label="Inbox" className="mb-4 flex flex-wrap gap-1.5">
+        <Link href="/admin/inbox" aria-current={tab === "messages" ? "page" : undefined} className={filterTab(tab === "messages")}>
           Messages
         </Link>
-        <Link href="/admin/inbox?tab=newsletter" aria-current={tab === "newsletter" ? "page" : undefined} className={tabClass(tab === "newsletter")}>
+        <Link href="/admin/inbox?tab=newsletter" aria-current={tab === "newsletter" ? "page" : undefined} className={filterTab(tab === "newsletter")}>
           Newsletter ({subscribers.count ?? 0})
         </Link>
       </nav>
@@ -54,7 +52,7 @@ export default async function InboxPage({ searchParams }: PageProps<"/admin/inbo
           {(messages.data ?? []).length === 0 ? (
             <EmptyState title={showHandled ? "Nothing handled yet." : "No new messages."} description="Messages sent from the contact page appear here." />
           ) : (
-            <ul className="divide-y divide-line border border-line bg-paper">
+            <ul className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-paper">
               {messages.data!.map((m) => (
                 <li key={m.id} className="space-y-2 px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -65,7 +63,7 @@ export default async function InboxPage({ searchParams }: PageProps<"/admin/inbo
                   </div>
                   <p className="text-sm whitespace-pre-line text-ink-soft">{m.message}</p>
                   <div className="flex gap-2">
-                    <a href={`mailto:${m.email}?subject=${encodeURIComponent("Re: your message")}`} className="inline-flex h-9 items-center rounded-sm border border-line-strong px-3 text-sm hover:bg-mist">
+                    <a href={`mailto:${m.email}?subject=${encodeURIComponent("Re: your message")}`} className="inline-flex h-9 items-center rounded-full border border-ink px-4 font-mono text-xs font-semibold tracking-[0.06em] hover:bg-lime">
                       Reply by email
                     </a>
                     <HandledToggle id={m.id} handled={m.handled} />
@@ -82,7 +80,7 @@ export default async function InboxPage({ searchParams }: PageProps<"/admin/inbo
           <div className="mb-3">
             <CopyEmails emails={subscribers.data!.map((s) => s.email)} />
           </div>
-          <ul className="divide-y divide-line border border-line bg-paper">
+          <ul className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-paper">
             {subscribers.data!.map((s) => (
               <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                 <span className="truncate text-sm">{s.email}</span>

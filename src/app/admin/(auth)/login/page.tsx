@@ -15,7 +15,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
 
   return (
     <>
-      <h1 className="mb-6 text-lg font-medium">Sign in to your dashboard</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-[-0.04em]">Sign in to your dashboard</h1>
       <LoginForm
         next={typeof next === "string" ? next : undefined}
         notice={typeof error === "string" ? NOTICES[error] : undefined}

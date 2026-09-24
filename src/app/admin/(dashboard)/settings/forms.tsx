@@ -152,7 +152,7 @@ export function ZoneForm({ zone }: { zone: ZoneValues | null }) {
   const [pending, start] = useTransition();
 
   return (
-    <form action={action} className="space-y-4 border border-line bg-mist p-4">
+    <form action={action} className="space-y-4 rounded-2xl border border-line bg-mist p-4">
       <FormMessage result={result ?? (deleteError ? { ok: false, error: deleteError } : null)} />
       {zone && <input type="hidden" name="id" value={zone.id} />}
       <div className="grid gap-4 sm:grid-cols-2">

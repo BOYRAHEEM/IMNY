@@ -136,6 +136,31 @@ html:has(.imny) body {
   color: #9a958c;
 }
 
+/* ---------------- Owner dashboard ---------------- */
+/* Same look as the store: warm neutrals, Poppins, mono labels. The dashboard's
+   neutral tokens are remapped here so every admin page picks them up. */
+html:has(.imny-admin),
+html:has(.imny-admin) body {
+  background: var(--color-bone);
+}
+
+.imny-admin {
+  --color-mist: #f2f0ea;
+  --color-line: #e5e2d9;
+  --color-line-strong: #d7d2c8;
+  --color-muted: #6f6b63;
+  --color-faint: #a8a49b;
+  --color-ink-soft: #46423b;
+  background: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+.imny-admin ::selection {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+
 /* Welcome screen: hidden instantly for visitors who already entered this session. */
 html[data-imny-entered] .imny-gate {
   display: none;

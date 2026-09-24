@@ -115,7 +115,7 @@ export function ImageManager({ productId, productName, images, primaryId, colour
   return (
     <div>
       {errors.length > 0 && (
-        <ul role="alert" className="mb-4 space-y-1 border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
+        <ul role="alert" className="mb-4 space-y-1 rounded-xl border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
           {errors.map((e) => (
             <li key={e}>{e}</li>
           ))}
@@ -125,8 +125,8 @@ export function ImageManager({ productId, productName, images, primaryId, colour
       {images.length > 0 && (
         <ul className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {images.map((img, index) => (
-            <li key={img.id} className="border border-line bg-paper">
-              <div className="relative aspect-[4/5] bg-mist">
+            <li key={img.id} className="overflow-hidden rounded-2xl border border-line bg-paper">
+              <div className="relative aspect-[4/5] placeholder-stripes">
                 <Image
                   src={img.url}
                   alt={img.alt_text || productName}
@@ -169,14 +169,14 @@ export function ImageManager({ productId, productName, images, primaryId, colour
                     placeholder="Describe this photo"
                     aria-label="Image description (alt text)"
                     maxLength={300}
-                    className="h-9 w-full rounded-sm border border-line px-2 text-xs focus:border-ink focus:outline-none"
+                    className="h-9 w-full rounded-lg border border-line px-2 text-xs focus:border-ink focus:outline-none"
                   />
                   {colourValues && colourValues.length > 0 && (
                     <select
                       value={img.option_value_id ?? ""}
                       onChange={(e) => update(img.id, { option_value_id: e.target.value || null })}
                       aria-label="Colour shown in this photo"
-                      className="h-9 w-full rounded-sm border border-line bg-paper px-2 text-xs focus:border-ink focus:outline-none"
+                      className="h-9 w-full rounded-lg border border-line bg-paper px-2 text-xs focus:border-ink focus:outline-none"
                     >
                       <option value="">All colours</option>
                       {colourValues.map((v) => (
@@ -206,7 +206,7 @@ export function ImageManager({ productId, productName, images, primaryId, colour
             if (e.dataTransfer.files.length) void addFiles(e.dataTransfer.files);
           }}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center border border-dashed px-4 py-8 text-center transition-colors",
+            "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-8 text-center transition-colors",
             dragOver ? "border-ink bg-mist" : "border-line-strong hover:bg-mist",
           )}
         >
@@ -252,7 +252,7 @@ function IconButton({
       aria-pressed={pressed}
       title={label}
       className={cn(
-        "flex size-9 items-center justify-center rounded-sm hover:bg-mist disabled:opacity-30",
+        "flex size-9 items-center justify-center rounded-full hover:bg-mist disabled:opacity-30",
         pressed ? "text-ink" : "text-muted",
       )}
     >

@@ -56,7 +56,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
       />
 
       {order.requires_attention && (
-        <div role="alert" className="mb-6 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <div role="alert" className="mb-6 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           <p className="flex items-start gap-2">
             <Icon name="alert" className="mt-0.5 size-4 shrink-0" />
             <span>
@@ -75,7 +75,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                 const img = catalogImageUrl(item.image_path);
                 return (
                   <li key={item.id} className="flex gap-3 px-4 py-3 sm:px-5">
-                    <div className="relative size-16 shrink-0 bg-mist">
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl placeholder-stripes">
                       {img && <Image src={img} alt="" fill sizes="64px" className="object-cover" />}
                     </div>
                     <div className="min-w-0 flex-1">

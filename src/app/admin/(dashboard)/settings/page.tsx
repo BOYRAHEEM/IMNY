@@ -72,7 +72,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
             </Panel>
           </>
         ) : (
-          <p role="alert" className="border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+          <p role="alert" className="rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
             Settings couldn&apos;t be loaded. Refresh to try again.
           </p>
         )}
@@ -90,22 +90,22 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           >
             <div className="space-y-3 p-4 sm:p-5">
               {(zoneParam === "saved" || zoneParam === "deleted") && (
-                <p role="status" className="border border-good/25 bg-good-bg px-3 py-2 text-sm text-good">
+                <p role="status" className="rounded-2xl border border-good/25 bg-good-bg px-3 py-2 text-sm text-good">
                   {zoneParam === "saved" ? "Delivery zone saved." : "Delivery zone deleted."}
                 </p>
               )}
               {zones.length === 0 && !addingZone && (
-                <p className="border border-warn/25 bg-warn-bg px-3 py-2.5 text-sm text-warn">
+                <p className="rounded-2xl border border-warn/25 bg-warn-bg px-3 py-2.5 text-sm text-warn">
                   Add at least one delivery zone. Customers can&apos;t check out until there is one.
                 </p>
               )}
               {zones.length > 0 && uncovered.length > 0 && (
-                <p className="border border-warn/25 bg-warn-bg px-3 py-2.5 text-sm text-warn">
+                <p className="rounded-2xl border border-warn/25 bg-warn-bg px-3 py-2.5 text-sm text-warn">
                   No active zone delivers to {uncovered.join(", ")}. Customers there can&apos;t check out.
                 </p>
               )}
               {addingZone && <ZoneForm zone={null} />}
-              <ul className="divide-y divide-line border border-line">
+              <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
                 {zones.map((zn) =>
                   editingZone?.id === zn.id ? (
                     <li key={zn.id} className="p-2">
@@ -146,7 +146,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
 
         <Panel title="Team">
           <div className="space-y-4 p-4 sm:p-5">
-            <ul className="divide-y divide-line border border-line">
+            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
               {team.map((m) => (
                 <li key={m.user_id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
                   <div className="min-w-0">

@@ -43,7 +43,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
       </form>
 
       {error && (
-        <p role="alert" className="mb-4 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <p role="alert" className="mb-4 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           Customers couldn&apos;t be loaded. Refresh to try again.
         </p>
       )}
@@ -54,7 +54,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
           description={q ? undefined : "Customers appear here after their first order or sign-up."}
         />
       ) : (
-        <div className="border border-line bg-paper">
+        <div className="overflow-hidden rounded-3xl border border-line bg-paper">
           <div className="hidden grid-cols-[minmax(0,1fr)_90px_130px_120px] gap-4 border-b border-line px-4 py-2 text-xs font-medium text-muted md:grid">
             <span>Customer</span>
             <span className="text-right">Orders</span>

@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Icon } from "@/components/admin/icons";
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader, filterTab } from "@/components/admin/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/form";
 import { requireStaffPage } from "@/lib/auth";
-import { cn } from "@/lib/cn";
 import { logError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { StockRow, type StockRowData } from "./stock-row";
@@ -51,19 +50,19 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       <PageHeader title="Inventory" description="Stock for every size and colour. Held units are reserved for customers who are paying." />
 
       {error && (
-        <p role="alert" className="mb-4 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <p role="alert" className="mb-4 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           Inventory couldn&apos;t be loaded. Refresh to try again.
         </p>
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Filter stock" className="flex gap-1">
+        <nav aria-label="Filter stock" className="flex flex-wrap gap-1.5">
           {FILTERS.map((f) => (
             <Link
               key={f.key}
               href={hrefFor({ filter: f.key, page: undefined })}
               aria-current={filter === f.key ? "page" : undefined}
-              className={cn("h-9 rounded-sm px-3 text-sm leading-9", filter === f.key ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper")}
+              className={filterTab(filter === f.key)}
             >
               {f.label}
             </Link>
@@ -89,7 +88,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           />
         )
       ) : (
-        <div className="border border-line bg-paper">
+        <div className="overflow-hidden rounded-3xl border border-line bg-paper">
           <div className="hidden grid-cols-[minmax(0,1fr)_90px_90px_220px] gap-x-4 border-b border-line px-4 py-2 text-xs font-medium text-muted md:grid">
             <span>Product</span>
             <span>Available</span>

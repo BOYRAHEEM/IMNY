@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <>
-      <h1 className="mb-2 text-lg font-medium">Reset your password</h1>
+      <h1 className="mb-2 text-2xl font-bold tracking-[-0.04em]">Reset your password</h1>
       <p className="mb-6 text-sm text-muted">We&apos;ll email you a link to choose a new one.</p>
       <form action={action} className="space-y-5">
         <FormMessage result={result} />

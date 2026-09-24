@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/admin/icons";
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader, filterTab } from "@/components/admin/page-header";
 import { ProductStatusBadge } from "@/components/admin/status";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -108,22 +108,19 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       />
 
       {sp.deleted === "1" && (
-        <p role="status" className="mb-4 border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
+        <p role="status" className="mb-4 rounded-2xl border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
           Product deleted.
         </p>
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Filter by status" className="-mx-1 flex gap-1 overflow-x-auto px-1">
+        <nav aria-label="Filter by status" className="-mx-1 flex gap-1.5 overflow-x-auto no-scrollbar px-1">
           {TABS.map((t) => (
             <Link
               key={t.key}
               href={hrefFor({ status: t.key })}
               aria-current={status === t.key ? "page" : undefined}
-              className={cn(
-                "h-9 shrink-0 rounded-sm px-3 text-sm leading-9",
-                status === t.key ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper",
-              )}
+              className={filterTab(status === t.key)}
             >
               {t.label}
             </Link>
@@ -147,12 +144,12 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
           />
         )
       ) : (
-        <div className="border border-line bg-paper">
+        <div className="overflow-hidden rounded-3xl border border-line bg-paper">
           <ul className="divide-y divide-line">
             {rows.map((p) => (
               <li key={p.id}>
                 <Link href={`/admin/products/${p.id}`} className="flex items-center gap-4 px-3 py-3 hover:bg-mist sm:px-4">
-                  <div className="relative size-14 shrink-0 overflow-hidden bg-mist sm:size-16">
+                  <div className="relative size-14 shrink-0 overflow-hidden rounded-xl placeholder-stripes sm:size-16">
                     {p.image ? (
                       <Image src={p.image} alt="" fill sizes="64px" className="object-cover" />
                     ) : (

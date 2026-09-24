@@ -59,8 +59,8 @@ export default function ConfirmPage() {
   }, [router]);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-mist px-4">
-      <div className="w-full max-w-sm border border-line bg-paper p-8 text-center">
+    <main className="imny-admin flex min-h-dvh items-center justify-center px-4">
+      <div className="w-full max-w-sm rounded-3xl border border-line bg-paper p-8 text-center">
         {error ? (
           <>
             <p className="font-medium">{error}</p>

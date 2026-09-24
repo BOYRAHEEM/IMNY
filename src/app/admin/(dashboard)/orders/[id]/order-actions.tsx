@@ -74,7 +74,7 @@ export function StatusPanel({
           </Button>
         </>
       ) : (
-        <form action={action} className="space-y-3 border border-bad/25 bg-bad-bg p-3">
+        <form action={action} className="space-y-3 rounded-2xl border border-bad/25 bg-bad-bg p-3">
           <input type="hidden" name="order_id" value={orderId} />
           <input type="hidden" name="status" value="cancelled" />
           <p className="text-sm font-medium text-bad">Cancel this order?</p>
@@ -181,7 +181,7 @@ export function ResolveForm({ orderId }: { orderId: string }) {
         placeholder="What did you do? (optional)"
         aria-label="Resolution note"
         maxLength={2000}
-        className="h-10 flex-1 rounded-sm border border-bad/30 bg-paper px-3 text-sm focus:border-ink focus:outline-none"
+        className="h-10 flex-1 rounded-lg border border-bad/30 bg-paper px-3 text-sm focus:border-ink focus:outline-none"
       />
       <SubmitButton variant="secondary" size="sm" className="h-10" pendingText="Saving…">
         Mark resolved

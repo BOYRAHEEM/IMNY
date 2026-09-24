@@ -3,6 +3,7 @@ import { Icon } from "@/components/admin/icons";
 import { PageHeader, Panel } from "@/components/admin/page-header";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/status";
 import { ButtonLink } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import { requireStaffPage } from "@/lib/auth";
 import { logError } from "@/lib/errors";
 import { formatCount, formatDateTime } from "@/lib/format";
@@ -60,13 +61,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       <PageHeader title={firstName ? `Hello, ${firstName}` : "Dashboard"} description="Here's how the store is doing." />
 
       {notice === "admin-only" && (
-        <p role="alert" className="mb-6 border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
+        <p role="alert" className="mb-6 rounded-2xl border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
           That page is only available to admins.
         </p>
       )}
 
       {missingSocial.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
           <p className="flex items-center gap-2">
             <Icon name="alert" className="size-4 shrink-0" />
             Add your {missingSocial.join(" and ")} link{missingSocial.length > 1 ? "s" : ""}. The footer buttons don&apos;t go anywhere until you do.
@@ -80,7 +81,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       )}
 
       {!stats && (
-        <p role="alert" className="mb-6 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
+        <p role="alert" className="mb-6 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad">
           Some figures couldn&apos;t be loaded. Refresh to try again.
         </p>
       )}
@@ -88,7 +89,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       {stats && stats.attention_orders > 0 && (
         <Link
           href="/admin/orders?attention=1"
-          className="mb-6 flex items-center gap-3 border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad hover:underline"
+          className="mb-6 flex items-center gap-3 rounded-2xl border border-bad/25 bg-bad-bg px-4 py-3 text-sm text-bad hover:underline"
         >
           <Icon name="alert" className="size-5 shrink-0" />
           <span>
@@ -99,8 +100,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       )}
 
       {stats && (
-        <div className="mb-8 grid grid-cols-2 gap-px border border-line bg-line lg:grid-cols-5">
-          <StatTile label="Revenue, last 30 days" value={formatMoneyCompact(stats.revenue_30d_minor, currency)} />
+        <div className="mb-8 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
+          <StatTile label="Revenue, last 30 days" value={formatMoneyCompact(stats.revenue_30d_minor, currency)} highlight />
           <StatTile label="Paid orders, last 30 days" value={formatCount(stats.orders_30d)} />
           <StatTile label="To fulfil" value={formatCount(stats.pending_orders)} href="/admin/orders?status=to-fulfil" />
           <StatTile
@@ -186,7 +187,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       </div>
 
       {stats && stats.active_products === 0 && (
-        <div className="mt-8 border border-line bg-paper px-5 py-8 text-center">
+        <div className="mt-8 rounded-2xl border border-line bg-paper px-5 py-8 text-center">
           <p className="font-medium">Your store has no published products yet.</p>
           <p className="mt-1 text-sm text-muted">Add a product with photos, sizes and prices to start selling.</p>
           <ButtonLink href="/admin/products/new" className="mt-5">
@@ -204,6 +205,7 @@ function StatTile({
   sub,
   href,
   warn,
+  highlight,
   className,
 }: {
   label: string;
@@ -211,22 +213,24 @@ function StatTile({
   sub?: string;
   href?: string;
   warn?: boolean;
+  /** Lime tile, like the store's accent pills. */
+  highlight?: boolean;
   className?: string;
 }) {
   const body = (
     <>
-      <p className="flex items-center gap-1.5 text-sm text-muted">
-        {warn && <Icon name="alert" className="size-4 text-warn" />}
+      <p className={cn("flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.16em] uppercase", highlight ? "text-ink/70" : "text-caption")}>
+        {warn && <Icon name="alert" className="size-3.5 text-warn" />}
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight tabular">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
+      <p className="mt-3 text-[clamp(26px,3vw,34px)] leading-none font-bold tracking-[-0.05em] tabular">{value}</p>
+      {sub && <p className="mt-1.5 font-mono text-[11px] text-muted">{sub}</p>}
     </>
   );
   return (
-    <div className={`bg-paper ${className ?? ""}`}>
+    <div className={cn("overflow-hidden rounded-3xl border", highlight ? "border-lime bg-lime" : "border-line bg-paper", className)}>
       {href ? (
-        <Link href={href} className="block h-full p-4 hover:bg-mist sm:p-5">
+        <Link href={href} className="block h-full p-4 transition-colors hover:bg-mist sm:p-5">
           {body}
         </Link>
       ) : (

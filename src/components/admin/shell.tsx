@@ -24,6 +24,16 @@ const NAV: NavItem[] = [
 
 type ShellUser = { email: string; name: string | null; role: "admin" | "staff" | "customer" };
 
+/** Store wordmark with the mono "owner" tag underneath. */
+function Wordmark({ storeName, size = "lg" }: { storeName: string; size?: "lg" | "sm" }) {
+  return (
+    <span className="flex flex-col gap-0.5 leading-none">
+      <span className={cn("font-bold tracking-[-0.06em]", size === "lg" ? "text-[28px]" : "text-[23px]")}>{storeName}</span>
+      <span className="font-mono text-[9px] font-medium tracking-[0.2em] text-caption">OWNER DASHBOARD</span>
+    </span>
+  );
+}
+
 export function AdminShell({ storeName, user, children }: { storeName: string; user: ShellUser; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -40,8 +50,8 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
           aria-current={isActive(item.href) ? "page" : undefined}
           onClick={() => setOpen(false)}
           className={cn(
-            "flex h-11 items-center gap-3 rounded-sm px-3 text-sm transition-colors lg:h-10",
-            isActive(item.href) ? "bg-ink text-paper" : "text-ink-soft hover:bg-mist hover:text-ink",
+            "flex h-11 items-center gap-3 rounded-full px-4 font-mono text-[13px] font-medium tracking-[0.04em] lowercase transition-colors lg:h-10",
+            isActive(item.href) ? "bg-ink text-bone" : "text-ink-soft hover:bg-ink/[0.06] hover:text-ink",
           )}
         >
           <Icon name={item.icon} className="size-[18px] shrink-0" />
@@ -52,16 +62,23 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
   );
 
   const account = (
-    <div className="border-t border-line pt-4">
-      <p className="truncate px-3 text-sm font-medium">{user.name || user.email}</p>
-      <p className="px-3 text-xs text-muted capitalize">{user.role}</p>
-      <div className="mt-3 flex flex-col gap-0.5">
-        <Link href="/" target="_blank" className="flex h-10 items-center gap-3 rounded-sm px-3 text-sm text-ink-soft hover:bg-mist">
-          <Icon name="external" className="size-[18px]" /> View store
+    <div className="border-t border-rule-card pt-4">
+      <p className="truncate px-4 text-sm font-semibold tracking-[-0.02em]">{user.name || user.email}</p>
+      <p className="px-4 font-mono text-[10px] tracking-[0.18em] text-caption uppercase">{user.role}</p>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <Link
+          href="/"
+          target="_blank"
+          className="flex h-10 items-center justify-center gap-2 rounded-full bg-lime px-4 font-mono text-xs font-semibold tracking-[0.08em] transition-colors hover:bg-ink hover:text-bone"
+        >
+          view store <Icon name="external" className="size-4" />
         </Link>
         <form action={adminSignOut}>
-          <button type="submit" className="flex h-10 w-full items-center gap-3 rounded-sm px-3 text-sm text-ink-soft hover:bg-mist">
-            <Icon name="logout" className="size-[18px]" /> Sign out
+          <button
+            type="submit"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-full border border-ink px-4 font-mono text-xs font-medium tracking-[0.08em] transition-colors hover:bg-ink hover:text-bone"
+          >
+            sign out <Icon name="logout" className="size-4" />
           </button>
         </form>
       </div>
@@ -69,12 +86,12 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
   );
 
   return (
-    <div className="min-h-dvh bg-mist lg:grid lg:grid-cols-[240px_1fr]">
+    <div className="imny-admin min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col justify-between border-r border-line bg-paper p-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col justify-between gap-6 overflow-y-auto bg-sand p-4 lg:flex">
         <div>
-          <Link href="/admin" className="mb-6 block px-3 pt-2 font-display text-2xl tracking-wide">
-            {storeName}
+          <Link href="/admin" className="mb-7 block px-4 pt-3">
+            <Wordmark storeName={storeName} />
           </Link>
           {nav}
         </div>
@@ -82,18 +99,18 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-paper px-4 lg:hidden">
-        <Link href="/admin" className="font-display text-xl tracking-wide">
-          {storeName}
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-sand/[0.88] px-4 backdrop-blur-md lg:hidden">
+        <Link href="/admin">
+          <Wordmark storeName={storeName} size="sm" />
         </Link>
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls="admin-mobile-nav"
-          className="-mr-2 flex size-11 items-center justify-center rounded-sm hover:bg-mist"
+          className="flex h-10 items-center gap-2 rounded-full border border-ink px-4 font-mono text-xs font-medium tracking-[0.08em] hover:bg-ink hover:text-bone"
         >
-          <Icon name="menu" className="size-5" />
+          menu <Icon name="menu" className="size-4" />
           <span className="sr-only">Open menu</span>
         </button>
       </header>
@@ -113,17 +130,17 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
           aria-modal="true"
           aria-label="Menu"
           className={cn(
-            "absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col justify-between overflow-y-auto bg-paper p-4 transition-transform",
+            "absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col justify-between gap-6 overflow-y-auto bg-sand p-4 transition-transform",
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="px-3 font-display text-xl tracking-wide">{storeName}</span>
+            <div className="mb-5 flex items-center justify-between pl-4">
+              <Wordmark storeName={storeName} size="sm" />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex size-11 items-center justify-center rounded-sm hover:bg-mist"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-ink/[0.06]"
               >
                 <Icon name="close" className="size-5" />
                 <span className="sr-only">Close menu</span>
@@ -135,7 +152,7 @@ export function AdminShell({ storeName, user, children }: { storeName: string; u
         </div>
       </div>
 
-      <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <main className="min-w-0 animate-page-in px-4 py-6 sm:px-6 lg:px-12 lg:py-10">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
     </div>

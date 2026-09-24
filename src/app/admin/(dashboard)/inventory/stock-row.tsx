@@ -59,7 +59,7 @@ export function StockRow({ row }: { row: StockRowData }) {
           onChange={(e) => setValue(e.target.value.replace(/[^\d]/g, ""))}
           inputMode="numeric"
           aria-describedby={result && !result.ok ? `stock-${row.variant_id}-error` : undefined}
-          className="h-10 w-20 rounded-sm border border-line-strong px-2 text-sm tabular focus:border-ink focus:outline-none"
+          className="h-10 w-20 rounded-lg border border-line-strong px-2 text-sm tabular focus:border-ink focus:outline-none"
         />
         <SubmitButton size="sm" variant={changed ? "primary" : "secondary"} disabled={!changed || value === ""} className="h-10">
           Save

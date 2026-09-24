@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "block w-full rounded-sm border border-line-strong bg-paper px-3 text-sm text-ink placeholder:text-faint " +
+  "block w-full rounded-xl border border-line-strong bg-paper px-3.5 text-sm text-ink placeholder:text-faint " +
   "focus:border-ink focus:outline-none focus-visible:outline-none disabled:bg-mist disabled:text-muted " +
   "aria-[invalid=true]:border-bad";
 
@@ -29,7 +29,7 @@ const chevron = {
 };
 
 export function Label({ className, ...props }: ComponentProps<"label">) {
-  return <label className={cn("mb-1.5 block text-sm font-medium text-ink", className)} {...props} />;
+  return <label className={cn("mb-2 block font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase", className)} {...props} />;
 }
 
 /** Label + control + hint/error, wired up for screen readers. */
@@ -54,7 +54,7 @@ export function Field({
     <div className={className}>
       <Label htmlFor={htmlFor}>
         {label}
-        {optional && <span className="ml-1 font-normal text-muted">(optional)</span>}
+        {optional && <span className="ml-1 font-normal tracking-normal text-faint normal-case">(optional)</span>}
       </Label>
       {children}
       {error ? (
@@ -87,14 +87,14 @@ export function FormMessage({ result }: { result?: { ok: boolean; error?: string
   if (!result) return null;
   if (!result.ok && result.error) {
     return (
-      <p role="alert" className="rounded-sm border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
+      <p role="alert" className="rounded-xl border border-bad/25 bg-bad-bg px-3 py-2.5 text-sm text-bad">
         {result.error}
       </p>
     );
   }
   if (result.ok && result.message) {
     return (
-      <p role="status" className="rounded-sm border border-good/25 bg-good-bg px-3 py-2.5 text-sm text-good">
+      <p role="status" className="rounded-xl border border-good/25 bg-good-bg px-3 py-2.5 text-sm text-good">
         {result.message}
       </p>
     );

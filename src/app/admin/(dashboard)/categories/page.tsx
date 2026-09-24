@@ -53,7 +53,7 @@ export default async function CategoriesPage({ searchParams }: PageProps<"/admin
       />
 
       {(sp.saved === "1" || sp.deleted === "1") && (
-        <p role="status" className="mb-4 border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
+        <p role="status" className="mb-4 rounded-2xl border border-good/25 bg-good-bg px-4 py-3 text-sm text-good">
           {sp.saved === "1" ? "Category saved." : "Category deleted."}
         </p>
       )}
@@ -83,7 +83,7 @@ export default async function CategoriesPage({ searchParams }: PageProps<"/admin
               />
             )
           ) : (
-            <ul className="divide-y divide-line border border-line bg-paper">
+            <ul className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-paper">
               {ordered.map((c) => (
                 <li key={c.id}>
                   <Link

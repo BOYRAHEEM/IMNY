@@ -90,7 +90,7 @@ export function SiteImageField({
       <p className="mb-1.5 text-sm font-medium">{label}</p>
       <p className="mb-3 text-sm text-muted">{hint}</p>
       <div className="flex items-start gap-4">
-        <div className="relative aspect-[4/5] w-28 shrink-0 overflow-hidden bg-mist">
+        <div className="relative aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-xl placeholder-stripes">
           {currentUrl ? (
             <Image src={currentUrl} alt="" fill sizes="112px" className="object-cover" />
           ) : (
@@ -103,7 +103,7 @@ export function SiteImageField({
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <label className="inline-flex h-9 cursor-pointer items-center rounded-sm border border-line-strong px-3 text-sm hover:bg-mist">
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-full border border-ink px-4 font-mono text-xs font-semibold tracking-[0.06em] hover:bg-lime">
             {currentUrl ? "Replace photo" : "Upload photo"}
             <input
               type="file"
