@@ -22,7 +22,7 @@ export function ProductCard({ product, currency, lowStockUnder, index, priority 
   const onSale = product.compare_at_min !== null && product.compare_at_min > product.price_min;
   const price =
     product.price_min === product.price_max ? formatMoney(product.price_min, currency) : `from ${formatMoney(product.price_min, currency)}`;
-  const sizes = "(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw";
+  const sizes = "(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw";
 
   return (
     <Link href={`/product/${product.slug}`} className="group block transition-colors duration-200 hover:text-violet">
@@ -53,9 +53,9 @@ export function ProductCard({ product, currency, lowStockUnder, index, priority 
           <span className={ui.caption("absolute right-2.5 bottom-2.5 tracking-[0.16em]")}>{String(index + 1).padStart(2, "0")}</span>
         )}
       </div>
-      <div className="mt-3 flex justify-between gap-3 font-mono text-[11px] font-medium tracking-[0.04em]">
+      <div className="mt-2.5 flex flex-col gap-1 font-mono text-[11px] font-medium tracking-[0.04em] sm:mt-3 sm:flex-row sm:justify-between sm:gap-3">
         <span className="uppercase">{product.name}</span>
-        <span className="shrink-0 text-label">
+        <span className="text-label sm:shrink-0">
           {price}
           {onSale && <s className="ml-1.5 text-caption">{formatMoney(product.compare_at_min, currency)}</s>}
         </span>
@@ -80,7 +80,8 @@ export function ProductGrid({
   className?: string;
 }) {
   return (
-    <ul className={cn("grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-x-5 gap-y-[30px]", className)}>
+    // Two columns on phones; from tablet up, as many 230px+ columns as fit (per design).
+    <ul className={cn("grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] sm:gap-x-5 sm:gap-y-[30px]", className)}>
       {products.map((p, i) => (
         <li key={p.id}>
           <ProductCard product={p} currency={currency} lowStockUnder={lowStockUnder} index={numbered ? i : undefined} priority={i < priorityCount} />

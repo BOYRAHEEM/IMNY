@@ -16,7 +16,7 @@ export default async function LookbookPage() {
     <section className={ui.section()}>
       <h1 className={ui.h1("mb-2.5")}>lookbook</h1>
       <p className="mt-0 mb-[30px] font-mono text-[11px] font-medium tracking-[0.2em] text-label">{settings.content.lookbook_caption}</p>
-      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4 p-0">
+      <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-[repeat(auto-fit,minmax(230px,1fr))] sm:gap-4">
         {looks.length
           ? looks.map((look, i) => (
               <li key={look.id} className="relative aspect-[3/4] overflow-hidden rounded-[20px] bg-mist">
@@ -25,7 +25,7 @@ export default async function LookbookPage() {
                   alt={look.alt_text || look.label || `${settings.store_name} look ${i + 1}`}
                   fill
                   priority={i < 2}
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 1024px) 33vw, 50vw"
                   className="object-cover"
                 />
                 {look.label && <span className={ui.caption("absolute bottom-3.5 left-3.5 rounded-full bg-bone/85 px-2.5 py-1 tracking-[0.18em] text-ink")}>{look.label}</span>}
