@@ -110,9 +110,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
         options={product.options}
         variants={variants}
         images={images}
-      >
-        <p className="m-0 border-t border-rule pt-5 font-mono text-[11px] tracking-[0.08em] text-label">{settings.content.returns_policy}</p>
-      </ProductView>
+      />
 
       {related.products.length > 0 && (
         <section className="px-[22px] py-[clamp(28px,5vw,72px)]" aria-labelledby="related">
