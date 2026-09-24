@@ -30,10 +30,12 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
   const settings = await getStoreSettings();
   const c = settings.content;
   const messages = splitList(settings.announcement ?? "");
-  // Footer shows Instagram and TikTok (links from Settings → Social).
-  const socials = (["instagram", "tiktok"] as const)
-    .map((k) => ({ label: k as string, href: settings.social_links?.[k] }))
-    .filter((s): s is { label: string; href: string } => typeof s.href === "string" && s.href.startsWith("https://"));
+  // Footer always shows Instagram and TikTok; links come from Settings → Social
+  // (a button without a link yet is shown but not clickable).
+  const socials = (["instagram", "tiktok"] as const).map((k) => {
+    const href = settings.social_links?.[k];
+    return { label: k as string, href: typeof href === "string" && href.startsWith("https://") ? href : null };
+  });
 
   return (
     <div className="imny flex min-h-dvh flex-col">

@@ -45,7 +45,7 @@ export function NavPills({ links }: { links: { href: string; label: string }[] }
 // ---------------------------------------------------------------------------
 // Footer: newsletter + link row, each hidden on certain pages (per design)
 // ---------------------------------------------------------------------------
-const NO_NEWSLETTER = [/^\/cart/, /^\/checkout/, /^\/order-confirmation/, /^\/about/, /^\/product\//];
+const NO_NEWSLETTER = [/^\/cart/, /^\/checkout/, /^\/order-confirmation/, /^\/about/, /^\/product\//, /^\/lookbook/, /^\/contact/];
 const NO_LINKS = [/^\/cart/, /^\/checkout/, /^\/product\//];
 
 export function FooterSections({
@@ -53,7 +53,7 @@ export function FooterSections({
   socials,
 }: {
   heading: string;
-  socials: { label: string; href: string }[];
+  socials: { label: string; href: string | null }[];
 }) {
   const pathname = usePathname();
   const showNewsletter = !NO_NEWSLETTER.some((re) => re.test(pathname));
@@ -64,11 +64,18 @@ export function FooterSections({
       {showNewsletter && <Newsletter heading={heading} />}
       {showLinks && socials.length > 0 && (
         <nav aria-label="Social" className="flex flex-wrap gap-2">
-          {socials.map((s) => (
-            <a key={s.label} href={s.href} target="_blank" rel="noopener" className={ui.pillLime("font-medium hover:bg-violet hover:text-bone sm:px-[18px]")}>
-              {s.label}
-            </a>
-          ))}
+          {socials.map((s) =>
+            s.href ? (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener" className={ui.pillLime("font-medium hover:bg-violet hover:text-bone sm:px-[18px]")}>
+                {s.label}
+              </a>
+            ) : (
+              // Link not added yet (Settings → Social): visible, not clickable.
+              <span key={s.label} aria-disabled="true" title="Coming soon" className={ui.pillLime("cursor-default font-medium hover:bg-lime hover:text-ink sm:px-[18px]")}>
+                {s.label}
+              </span>
+            ),
+          )}
         </nav>
       )}
     </>

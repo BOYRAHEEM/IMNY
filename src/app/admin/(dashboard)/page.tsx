@@ -29,7 +29,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
   const { error: notice } = await searchParams;
   const supabase = await createClient();
 
-  const [statsRes, recentRes, lowRes] = await Promise.all([
+  const [statsRes, recentRes, lowRes, settingsRes] = await Promise.all([
     supabase.rpc("admin_dashboard_stats"),
     supabase
       .from("orders")
@@ -37,7 +37,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       .order("created_at", { ascending: false })
       .limit(8),
     supabase.rpc("admin_low_stock", { p_limit: 8 }),
+    supabase.from("store_settings").select("social_links").single(),
   ]);
+
+  // The footer always shows Instagram and TikTok buttons; remind the team to link them.
+  const social = (settingsRes.data?.social_links ?? {}) as Record<string, string>;
+  const missingSocial = (["Instagram", "TikTok"] as const).filter((n) => !social[n.toLowerCase()]?.startsWith("https://"));
 
   if (statsRes.error) logError("dashboard.stats", statsRes.error);
   if (recentRes.error) logError("dashboard.recent", recentRes.error);
@@ -58,6 +63,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
         <p role="alert" className="mb-6 border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
           That page is only available to admins.
         </p>
+      )}
+
+      {missingSocial.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-warn/25 bg-warn-bg px-4 py-3 text-sm text-warn">
+          <p className="flex items-center gap-2">
+            <Icon name="alert" className="size-4 shrink-0" />
+            Add your {missingSocial.join(" and ")} link{missingSocial.length > 1 ? "s" : ""}. The footer buttons don&apos;t go anywhere until you do.
+          </p>
+          {user.role === "admin" && (
+            <ButtonLink href="/admin/settings#s-instagram" variant="secondary" size="sm">
+              Add links
+            </ButtonLink>
+          )}
+        </div>
       )}
 
       {!stats && (
