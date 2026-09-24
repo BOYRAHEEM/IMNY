@@ -5,9 +5,8 @@ import { ProductView } from "@/components/store/product-view";
 import { ui } from "@/components/store/ui";
 import { publicEnv } from "@/lib/env";
 import { catalogImageUrl } from "@/lib/images";
-import { formatMoney } from "@/lib/money";
 import { getAvailability, getProductBySlug, listProducts, safely } from "@/lib/queries/catalog";
-import { deliverySummary, getDeliveryZones, getStoreSettings } from "@/lib/queries/settings";
+import { getStoreSettings } from "@/lib/queries/settings";
 
 export const revalidate = 300;
 
@@ -45,9 +44,8 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
   const product = await load((await params).slug);
   if (!product || product.variants.length === 0) notFound();
 
-  const [settings, zones, availability, related] = await Promise.all([
+  const [settings, availability, related] = await Promise.all([
     getStoreSettings(),
-    getDeliveryZones(),
     safely("product.availability", () => getAvailability([product.id]), {} as Record<string, number>),
     safely(
       "product.related",
@@ -95,15 +93,6 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
     },
   };
 
-  const { freeOver, flatFee } = deliverySummary(settings, zones);
-  const deliveryLine = [
-    "delivery across ghana",
-    freeOver !== null ? `free over ${formatMoney(freeOver, settings.currency)}` : null,
-    flatFee !== null && flatFee > 0 ? `${formatMoney(flatFee, settings.currency)} under that` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <>
       <script
@@ -122,10 +111,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
         variants={variants}
         images={images}
       >
-        <ul className="m-0 grid list-none gap-1.5 border-t border-rule p-0 pt-5 font-mono text-[11px] tracking-[0.08em] text-label">
-          <li>{deliveryLine}</li>
-          <li>{settings.content.returns_policy}</li>
-        </ul>
+        <p className="m-0 border-t border-rule pt-5 font-mono text-[11px] tracking-[0.08em] text-label">{settings.content.returns_policy}</p>
       </ProductView>
 
       {related.products.length > 0 && (
