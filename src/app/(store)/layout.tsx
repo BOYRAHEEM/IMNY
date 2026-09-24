@@ -30,8 +30,9 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
   const settings = await getStoreSettings();
   const c = settings.content;
   const messages = splitList(settings.announcement ?? "");
-  const socials = (["instagram", "tiktok", "facebook", "x"] as const)
-    .map((k) => ({ label: k === "x" ? "x" : k, href: settings.social_links?.[k] }))
+  // Footer shows Instagram and TikTok (links from Settings → Social).
+  const socials = (["instagram", "tiktok"] as const)
+    .map((k) => ({ label: k as string, href: settings.social_links?.[k] }))
     .filter((s): s is { label: string; href: string } => typeof s.href === "string" && s.href.startsWith("https://"));
 
   return (
@@ -94,7 +95,12 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
           <span>
             © {new Date().getFullYear()} {settings.store_name}
           </span>
-          <span>{c.city}</span>
+          <span className="flex gap-4">
+            <Link href="/delivery" className="hover:text-ink">
+              DELIVERY & RETURNS
+            </Link>
+            <span>{c.city}</span>
+          </span>
         </div>
       </footer>
     </div>

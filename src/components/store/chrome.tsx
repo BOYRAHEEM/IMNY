@@ -62,14 +62,8 @@ export function FooterSections({
   return (
     <>
       {showNewsletter && <Newsletter heading={heading} />}
-      {showLinks && (
-        <nav aria-label="Footer" className="flex flex-wrap gap-2">
-          <Link href="/shop" className={ui.pill("sm:px-[18px]")}>
-            shop
-          </Link>
-          <Link href="/delivery" className={ui.pill("sm:px-[18px]")}>
-            delivery
-          </Link>
+      {showLinks && socials.length > 0 && (
+        <nav aria-label="Social" className="flex flex-wrap gap-2">
           {socials.map((s) => (
             <a key={s.label} href={s.href} target="_blank" rel="noopener" className={ui.pillLime("font-medium hover:bg-violet hover:text-bone sm:px-[18px]")}>
               {s.label}
