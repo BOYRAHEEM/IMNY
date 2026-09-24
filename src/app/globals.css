@@ -113,6 +113,14 @@
 }
 
 /* ---------------- Storefront ---------------- */
+/* Store pages: the page stops at the footer (no rubber-band bounce past it),
+   and the canvas behind it matches the store colour in case a browser still bounces. */
+html:has(.imny),
+html:has(.imny) body {
+  background: var(--color-bone);
+  overscroll-behavior-y: none;
+}
+
 .imny {
   background: var(--color-bone);
   color: var(--color-ink);
