@@ -26,7 +26,7 @@ export function ProductCard({ product, currency, lowStockUnder, index, priority 
 
   return (
     <Link href={`/product/${product.slug}`} className="group block transition-colors duration-200 hover:text-violet">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] transition-[transform,box-shadow] duration-[280ms] ease-out group-hover:-rotate-[0.6deg] group-hover:scale-[1.035] group-hover:shadow-[0_14px_30px_-14px_rgba(20,18,15,0.35)] motion-reduce:group-hover:transform-none">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-[14px] transition-[transform,box-shadow] sm:aspect-[4/5] sm:rounded-[18px] duration-[280ms] ease-out group-hover:-rotate-[0.6deg] group-hover:scale-[1.035] group-hover:shadow-[0_14px_30px_-14px_rgba(20,18,15,0.35)] motion-reduce:group-hover:transform-none">
         {image ? (
           <Image src={image} alt={product.image_alt || product.name} fill sizes={sizes} priority={priority} className="object-cover" />
         ) : (
@@ -80,8 +80,14 @@ export function ProductGrid({
   className?: string;
 }) {
   return (
-    // Two columns on phones; from tablet up, as many 230px+ columns as fit (per design).
-    <ul className={cn("grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] sm:gap-x-5 sm:gap-y-[30px]", className)}>
+    // Phones: two columns bleeding into the page gutter (12px edges) so photos are as large as possible.
+    // Tablet up: as many 230px+ columns as fit (per design).
+    <ul
+      className={cn(
+        "-mx-2.5 grid grid-cols-2 gap-x-2 gap-y-6 sm:mx-0 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] sm:gap-x-5 sm:gap-y-[30px]",
+        className,
+      )}
+    >
       {products.map((p, i) => (
         <li key={p.id}>
           <ProductCard product={p} currency={currency} lowStockUnder={lowStockUnder} index={numbered ? i : undefined} priority={i < priorityCount} />

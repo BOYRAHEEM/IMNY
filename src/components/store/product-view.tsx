@@ -104,7 +104,8 @@ export function ProductView({ name, description, currency, maxQuantity, lowStock
   const missing = options.find((_, i) => !selection[i]);
 
   return (
-    <section className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 p-4">
+    // Phones: photos edge to edge (no outer padding); tablet up: padded 2-column layout.
+    <section className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 sm:p-4">
       <Gallery key={chosenColour ?? "all"} images={gallery} name={name} lowStock={lowStock} />
 
       <div className="flex flex-col gap-7 self-start p-[clamp(20px,4vw,56px)] md:sticky md:top-[74px]">
@@ -282,7 +283,7 @@ function Gallery({ images, name, lowStock }: { images: ViewImage[]; name: string
         role="region"
         aria-label={`${name} photos`}
         tabIndex={0}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-[22px]"
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto sm:rounded-[22px]"
       >
         {shots.map((shot, i) => (
           <div
