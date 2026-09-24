@@ -118,7 +118,9 @@ function Newsletter({ heading }: { heading: string }) {
 const ENTERED_KEY = "imny-entered";
 const noop = () => () => {};
 
+/** Lives in the store layout (outside the page-fade wrapper) so it stacks above the header; shows on the home page only. */
 export function WelcomeGate({ badge, est }: { badge: string; est: string }) {
+  const pathname = usePathname();
   // Server and hydration render the gate; CSS hides it instantly if already entered.
   const alreadyEntered = useSyncExternalStore(
     noop,
@@ -135,7 +137,7 @@ export function WelcomeGate({ badge, est }: { badge: string; est: string }) {
   const [gone, setGone] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
 
-  const visible = !alreadyEntered && !gone;
+  const visible = !alreadyEntered && !gone && pathname === "/";
 
   useEffect(() => {
     if (!visible) return;

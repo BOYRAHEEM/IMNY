@@ -3,7 +3,26 @@
 Full-stack clothing e-commerce: customer storefront and admin dashboard.
 Next.js (App Router) + TypeScript + Tailwind + Supabase (Postgres, Auth, Storage, RLS) + Paystack. Deployed on Vercel.
 
-> Status: scaffold and database are complete and tested. The admin UI, storefront, checkout and payments are next.
+> Status: storefront (IMNY design handoff), dashboard, checkout, Paystack integration, pay on delivery and emails are built and tested.
+> Still needed before launch: real photography, Paystack live keys + webhook, Resend for email, Vercel deployment.
+
+## What the owner manages (no code needed)
+
+| Where | What |
+| --- | --- |
+| Products | Products, photos, colours/sizes, prices, stock, featured ("the hits") |
+| Inventory / Orders | Stock levels; order status, cash received, refunds |
+| Categories / Discounts | Shop filters; discount codes |
+| Lookbook | Lookbook photos (placeholders show until uploaded) |
+| Inbox | Contact messages and newsletter sign-ups |
+| Settings | Store details, scrolling banner, free-delivery threshold, LOW STOCK tag threshold, delivery zones (fee, days, pay on delivery), homepage/about photos, all page text, team |
+
+Page text defaults come from the design (`src/content/site.ts`); anything edited in Settings → Page text overrides it.
+
+## Payments
+- **Mobile money / card**: Paystack's hosted page (card details never touch this site). Payment is marked paid only after a server-to-server verification (return URL or signed webhook).
+- **Pay on delivery**: only for zones with "Allow pay on delivery". Stock is committed at checkout; staff record the cash on the order page.
+- **Local testing**: set `PAYMENT_PROVIDER=dev` in `.env.local` to simulate payments. Ignored outside `npm run dev`.
 
 ## Setup
 

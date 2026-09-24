@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { WelcomeGate } from "@/components/store/chrome";
 import { ProductGrid } from "@/components/store/product-card";
 import { ui } from "@/components/store/ui";
 import { splitList } from "@/content/site";
@@ -25,8 +24,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <WelcomeGate badge={c.splash_badge} est={c.est_label} />
-
       <section className="relative grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
         <div className="flex min-h-[64vh] flex-col justify-between gap-11 p-[clamp(28px,5vw,72px)]">
           <div className="flex flex-wrap gap-2">

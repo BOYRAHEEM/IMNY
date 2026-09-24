@@ -46,7 +46,8 @@
   --animate-marquee: imny-marquee 24s linear infinite;
   --animate-spin-slow: imny-spin 9s linear infinite;
   --animate-bob: imny-bob 3.6s ease-in-out infinite;
-  --animate-page-in: imny-fade 180ms ease both;
+  /* "backwards" so no stacking context lingers after the fade */
+  --animate-page-in: imny-fade 180ms ease backwards;
 
   @keyframes imny-marquee {
     from { transform: translateX(0); }
