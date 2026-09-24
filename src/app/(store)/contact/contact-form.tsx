@@ -36,7 +36,7 @@ export function ContactForm() {
           {state.error}
         </p>
       )}
-      <button type="submit" disabled={pending} className={ui.cta("mt-2 self-start px-10 py-[17px] tracking-[0.26em]")}>
+      <button type="submit" disabled={pending} className={ui.cta("mt-2 self-start sm:px-10 sm:py-[17px] sm:tracking-[0.26em]")}>
         {pending ? "SENDING…" : "SEND"}
       </button>
     </form>

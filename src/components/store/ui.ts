@@ -1,28 +1,32 @@
 import { cn } from "@/lib/cn";
 
-/** IMNY design-system class recipes (see design handoff tokens). */
+/**
+ * IMNY design-system class recipes (see design handoff tokens).
+ * Buttons are larger on phones (bigger text, 44px+ tap targets); from the
+ * `sm` breakpoint up they use the design's exact sizes.
+ */
 
 const pillBase =
   "inline-flex items-center justify-center whitespace-nowrap rounded-full font-mono font-semibold transition-[background-color,color,transform,border-color] duration-150 ease-out disabled:pointer-events-none disabled:opacity-50";
 
+const ctaSize = "px-8 py-5 text-[13px] tracking-[0.2em] sm:px-10 sm:py-[18px] sm:text-xs sm:tracking-[0.22em]";
+const pillSize = "px-[18px] py-3 text-[13px] tracking-[0.08em] sm:px-4 sm:py-[9px] sm:text-[11px] sm:tracking-[0.1em]";
+
 export const ui = {
   /** Big black CTA: SHOP THE DROP, ADD TO BAG, KEEP SHOPPING */
   cta: (className?: string) =>
-    cn(pillBase, "bg-ink px-10 py-[18px] text-xs tracking-[0.22em] text-bone hover:-translate-y-0.5 hover:bg-violet hover:text-bone", className),
+    cn(pillBase, ctaSize, "bg-ink text-bone hover:-translate-y-0.5 hover:bg-violet hover:text-bone", className),
   /** Outlined CTA: SEE THE LOOKS (lime on hover) */
-  ctaOutline: (className?: string) =>
-    cn(pillBase, "border border-ink px-10 py-[18px] text-xs tracking-[0.22em] hover:bg-lime hover:text-ink", className),
+  ctaOutline: (className?: string) => cn(pillBase, ctaSize, "border border-ink hover:bg-lime hover:text-ink", className),
   /** Small outlined nav/link pill: shop, ← back, keep shopping */
-  pill: (className?: string) =>
-    cn(pillBase, "border border-ink px-4 py-[9px] text-[11px] font-medium tracking-[0.1em] hover:bg-ink hover:text-bone", className),
+  pill: (className?: string) => cn(pillBase, pillSize, "border border-ink font-medium hover:bg-ink hover:text-bone", className),
   /** Lime pill: bag (N), instagram */
-  pillLime: (className?: string) =>
-    cn(pillBase, "bg-lime px-4 py-[9px] text-[11px] tracking-[0.1em] hover:bg-ink hover:text-bone", className),
+  pillLime: (className?: string) => cn(pillBase, pillSize, "bg-lime hover:bg-ink hover:text-bone", className),
   /** Toggle pill (sizes, payment methods). */
   choice: (selected: boolean, className?: string) =>
     cn(
       pillBase,
-      "border border-ink px-6 py-[13px] text-xs tracking-[0.08em]",
+      "border border-ink px-6 py-[15px] text-sm tracking-[0.08em] sm:py-[13px] sm:text-xs",
       selected ? "bg-ink text-bone" : "bg-transparent text-ink hover:bg-ink/5",
       className,
     ),

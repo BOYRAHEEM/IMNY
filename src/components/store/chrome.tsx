@@ -27,7 +27,13 @@ export function NavPills({ links }: { links: { href: string; label: string }[] }
       {links.map((l) => {
         const active = pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"));
         return (
-          <Link key={l.href} href={l.href} aria-current={active ? "page" : undefined} className={ui.pill(active ? "bg-ink text-bone" : undefined)}>
+          <Link
+            key={l.href}
+            href={l.href}
+            aria-current={active ? "page" : undefined}
+            // Slightly narrower on phones so all four stay on one row.
+            className={ui.pill(cn("max-sm:px-3.5 max-sm:text-xs", active && "bg-ink text-bone"))}
+          >
             {l.label}
           </Link>
         );
@@ -58,14 +64,14 @@ export function FooterSections({
       {showNewsletter && <Newsletter heading={heading} />}
       {showLinks && (
         <nav aria-label="Footer" className="flex flex-wrap gap-2">
-          <Link href="/shop" className={ui.pill("px-[18px]")}>
+          <Link href="/shop" className={ui.pill("sm:px-[18px]")}>
             shop
           </Link>
-          <Link href="/delivery" className={ui.pill("px-[18px]")}>
+          <Link href="/delivery" className={ui.pill("sm:px-[18px]")}>
             delivery
           </Link>
           {socials.map((s) => (
-            <a key={s.label} href={s.href} target="_blank" rel="noopener" className={ui.pillLime("px-[18px] font-medium hover:bg-violet hover:text-bone")}>
+            <a key={s.label} href={s.href} target="_blank" rel="noopener" className={ui.pillLime("font-medium hover:bg-violet hover:text-bone sm:px-[18px]")}>
               {s.label}
             </a>
           ))}
@@ -98,7 +104,7 @@ function Newsletter({ heading }: { heading: string }) {
           />
           {/* Honeypot: real people never fill this in. */}
           <input name="company" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
-          <button type="submit" disabled={pending || done} className={cn(ui.cta("px-6 py-3 text-[11px] tracking-[0.2em] hover:translate-y-0"))}>
+          <button type="submit" disabled={pending || done} className={ui.cta("px-6 py-4 hover:translate-y-0 sm:px-6 sm:py-3 sm:text-[11px] sm:tracking-[0.2em]")}>
             {done ? "YOU'RE IN" : pending ? "…" : "JOIN"}
           </button>
         </div>

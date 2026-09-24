@@ -72,7 +72,7 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
         {header}
         <div className="flex flex-col items-start gap-[18px] py-[clamp(32px,6vw,72px)]">
           <p className="m-0 text-[clamp(20px,3vw,30px)] font-bold tracking-[-0.03em] text-copy">nothing in here yet.</p>
-          <Link href="/shop" className={ui.cta("px-[38px] py-[17px]")}>
+          <Link href="/shop" className={ui.cta("sm:px-[38px] sm:py-[17px]")}>
             GO SHOPPING
           </Link>
         </div>
@@ -240,7 +240,7 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
                     disabled={disabled}
                     title={disabled ? `Only for ${codZones.map((z) => z.name).join(", ")}` : undefined}
                     onClick={() => setMethod(m.key)}
-                    className={ui.choice(effectiveMethod === m.key, "px-[18px] py-3 tracking-[0.06em] disabled:opacity-35")}
+                    className={ui.choice(effectiveMethod === m.key, "px-[18px] tracking-[0.06em] disabled:opacity-35 sm:py-3")}
                   >
                     {m.label}
                   </button>

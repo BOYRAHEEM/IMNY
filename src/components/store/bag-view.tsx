@@ -52,7 +52,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
         {header}
         <div className="flex flex-col items-start gap-[18px] py-[clamp(32px,6vw,72px)]">
           <p className="m-0 text-[clamp(20px,3vw,30px)] font-bold tracking-[-0.03em] text-copy">nothing in here yet.</p>
-          <Link href="/shop" className={ui.cta("px-[38px] py-[17px] hover:translate-y-0")}>
+          <Link href="/shop" className={ui.cta("hover:translate-y-0 sm:px-[38px] sm:py-[17px]")}>
             GO SHOPPING
           </Link>
         </div>
@@ -132,7 +132,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
                           type="button"
                           onClick={() => (line.quantity <= 1 ? cart.remove(line.variant_id) : cart.set(line.variant_id, line.quantity - 1))}
                           aria-label={line.quantity <= 1 ? "Remove" : "Decrease quantity"}
-                          className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone"
+                          className="size-11 rounded-full font-mono text-base sm:size-10 sm:text-sm hover:bg-ink hover:text-bone"
                         >
                           −
                         </button>
@@ -142,7 +142,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
                           onClick={() => cart.set(line.variant_id, Math.min(maxQty, line.quantity + 1))}
                           disabled={line.quantity >= maxQty}
                           aria-label="Increase quantity"
-                          className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
+                          className="size-11 rounded-full font-mono text-base sm:size-10 sm:text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
                         >
                           +
                         </button>
@@ -151,7 +151,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
                     <button
                       type="button"
                       onClick={() => cart.remove(line.variant_id)}
-                      className="border-b border-rule-card p-0 font-mono text-[10px] tracking-[0.16em] text-caption hover:text-violet"
+                      className="border-b border-rule-card py-1 font-mono text-xs tracking-[0.16em] text-caption hover:text-violet sm:py-0 sm:text-[10px]"
                     >
                       REMOVE
                     </button>
@@ -160,7 +160,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
               </article>
             );
           })}
-          <Link href="/shop" className={ui.pill("justify-self-start px-[18px] py-2.5 tracking-[0.14em]")}>
+          <Link href="/shop" className={ui.pill("justify-self-start sm:px-[18px] sm:py-2.5 sm:tracking-[0.14em]")}>
             ← keep shopping
           </Link>
         </div>

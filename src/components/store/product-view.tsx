@@ -109,7 +109,7 @@ export function ProductView({ name, description, currency, maxQuantity, lowStock
       <Gallery key={chosenColour ?? "all"} images={gallery} name={name} lowStock={lowStock} />
 
       <div className="flex flex-col gap-7 self-start p-[clamp(20px,4vw,56px)] md:sticky md:top-[74px]">
-        <Link href="/shop" className={ui.pill("self-start px-4 py-2 tracking-[0.14em]")}>
+        <Link href="/shop" className={ui.pill("self-start sm:px-4 sm:py-2 sm:tracking-[0.14em]")}>
           ← back
         </Link>
 
@@ -202,7 +202,7 @@ export function ProductView({ name, description, currency, maxQuantity, lowStock
                 onClick={() => setQuantity(Math.max(1, qty - 1))}
                 disabled={qty <= 1}
                 aria-label="Decrease quantity"
-                className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
+                className="size-11 rounded-full font-mono text-base sm:size-10 sm:text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
               >
                 −
               </button>
@@ -214,7 +214,7 @@ export function ProductView({ name, description, currency, maxQuantity, lowStock
                 onClick={() => setQuantity(Math.min(maxQty, qty + 1))}
                 disabled={qty >= maxQty || !variant}
                 aria-label="Increase quantity"
-                className="size-10 rounded-full font-mono text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
+                className="size-11 rounded-full font-mono text-base sm:size-10 sm:text-sm hover:bg-ink hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink"
               >
                 +
               </button>
@@ -224,15 +224,15 @@ export function ProductView({ name, description, currency, maxQuantity, lowStock
 
         <div className="flex flex-col gap-2.5">
           {soldOut || (variant && available <= 0) ? (
-            <button type="button" disabled className={ui.cta("w-full py-5 text-[13px] tracking-[0.26em]")}>
+            <button type="button" disabled className={ui.cta("w-full py-[22px] text-sm tracking-[0.24em] sm:py-5 sm:text-[13px] sm:tracking-[0.26em]")}>
               SOLD OUT
             </button>
           ) : (
             <>
-              <button type="button" onClick={addToBag} className={ui.cta("w-full py-5 text-[13px] tracking-[0.26em]")} aria-live="polite">
+              <button type="button" onClick={addToBag} className={ui.cta("w-full py-[22px] text-sm tracking-[0.24em] sm:py-5 sm:text-[13px] sm:tracking-[0.26em]")} aria-live="polite">
                 {justAdded ? "IN YOUR BAG" : prompt && missing ? `PICK A ${missing.name.toUpperCase()}` : "ADD TO BAG"}
               </button>
-              <button type="button" onClick={() => addToBag() && router.push("/checkout")} className={ui.ctaOutline("w-full py-4")}>
+              <button type="button" onClick={() => addToBag() && router.push("/checkout")} className={ui.ctaOutline("w-full py-5 sm:py-4")}>
                 BUY NOW
               </button>
             </>
