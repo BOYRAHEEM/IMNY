@@ -53,7 +53,7 @@ export function ProductCard({ product, currency, lowStockUnder, index, priority 
           <span className={ui.caption("absolute right-2.5 bottom-2.5 tracking-[0.16em]")}>{String(index + 1).padStart(2, "0")}</span>
         )}
       </div>
-      <div className="mt-2.5 flex flex-col gap-1 font-mono text-[11px] font-medium tracking-[0.04em] sm:mt-3 sm:flex-row sm:justify-between sm:gap-3">
+      <div className="mt-2.5 flex flex-col gap-1 font-mono text-[13px] leading-snug font-medium tracking-[0.02em] sm:mt-3 sm:flex-row sm:justify-between sm:gap-3 sm:text-[11px] sm:tracking-[0.04em]">
         <span className="uppercase">{product.name}</span>
         <span className="text-label sm:shrink-0">
           {price}
