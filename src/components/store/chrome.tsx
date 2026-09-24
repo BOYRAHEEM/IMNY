@@ -45,7 +45,7 @@ export function NavPills({ links }: { links: { href: string; label: string }[] }
 // ---------------------------------------------------------------------------
 // Footer: newsletter + link row, each hidden on certain pages (per design)
 // ---------------------------------------------------------------------------
-const NO_NEWSLETTER = [/^\/cart/, /^\/checkout/, /^\/order-confirmation/, /^\/about/, /^\/product\//, /^\/lookbook/, /^\/contact/];
+const NO_NEWSLETTER = [/^\/cart/, /^\/checkout/, /^\/order-confirmation/, /^\/about/, /^\/product\//, /^\/lookbook/, /^\/contact/, /^\/delivery/];
 const NO_LINKS = [/^\/cart/, /^\/checkout/, /^\/product\//];
 
 export function FooterSections({
