@@ -65,6 +65,14 @@ async function loadOrder(orderNumber: string, token: string): Promise<Order | nu
   return order;
 }
 
+/** Headline and message for a placed order: one until it's delivered, another after. */
+function placedCopy(status: string, cash: string): { heading: string; sub: string } {
+  if (status === "delivered") {
+    return { heading: "the fit has landed", sub: "delivered · now go serve looks. thanks for rocking IMNY, see you at the next drop." };
+  }
+  return { heading: "you ate that", sub: `order confirmed.${cash} we'll email you when it's on the way.` };
+}
+
 function Badge() {
   return <div aria-hidden className="size-[72px] rounded-full bg-lime" />;
 }
@@ -87,7 +95,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps<
         <Badge />
         <div>
           <h1 className="mt-0 mb-3.5 text-[clamp(36px,7vw,72px)] leading-[0.95] font-bold tracking-[-0.06em]">
-            {thanks ? "it's yours now" : returned === "pending" ? "almost there" : "order not found"}
+            {thanks ? "you ate that" :returned === "pending" ? "almost there" : "order not found"}
           </h1>
           <p className="m-0 max-w-[46ch] text-[17px] leading-[1.6] text-copy">
             {returned
@@ -111,19 +119,22 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps<
   const itemCount = order.items.reduce((n, i) => n + i.quantity, 0);
   const step = STEPS.findIndex((s) => s.key === order.status);
 
+  const cash = cod && !paid ? ` keep ${money(order.total_minor)} in cash ready for the rider.` : "";
+  const progress = placed ? placedCopy(order.status, cash) : null;
+
   const heading = cancelled
     ? "this order was cancelled"
     : order.payment_status === "refunded"
       ? "this order was refunded"
-      : placed
-        ? "it's yours now"
+      : progress
+        ? progress.heading
         : pending
           ? "almost there"
           : "that didn't go through";
   const sub = cancelled || order.payment_status === "failed"
     ? "you haven't been charged for this order."
-    : placed
-      ? `order confirmed · we're already packing it up.${cod && !paid ? ` pay ${money(order.total_minor)} in cash when it arrives.` : ""} we'll email you when it's on the way.`
+    : progress
+      ? progress.sub
       : "mobile money payments can take a minute. refresh this page shortly, we'll also email you once it's confirmed.";
 
   return (
