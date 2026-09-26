@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ClearBag } from "@/components/store/clear-bag";
+import { Confetti } from "@/components/store/confetti";
 import { ui } from "@/components/store/ui";
 import { cn } from "@/lib/cn";
 import { logError } from "@/lib/errors";
@@ -82,6 +83,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps<
     return (
       <section className="flex flex-col items-center gap-7 px-[22px] py-[clamp(48px,9vw,120px)] text-center">
         {thanks && <ClearBag />}
+        {thanks && <Confetti />}
         <Badge />
         <div>
           <h1 className="mt-0 mb-3.5 text-[clamp(36px,7vw,72px)] leading-[0.95] font-bold tracking-[-0.06em]">
@@ -127,6 +129,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps<
   return (
     <>
       {(placed || pending) && <ClearBag />}
+      {placed && returned && <Confetti onceKey={order.order_number} />}
       <section className="flex flex-col items-center gap-7 px-[22px] pt-[clamp(48px,9vw,120px)] pb-[clamp(28px,5vw,56px)] text-center">
         <Badge />
         <div>
