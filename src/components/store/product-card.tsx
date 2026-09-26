@@ -71,6 +71,7 @@ export function ProductGrid({
   lowStockUnder,
   numbered,
   priorityCount = 0,
+  transitionNames,
   className,
 }: {
   products: Card[];
@@ -78,6 +79,8 @@ export function ProductGrid({
   lowStockUnder: number;
   numbered?: boolean;
   priorityCount?: number;
+  /** Name each card for view transitions, so re-sorting animates them into place. */
+  transitionNames?: boolean;
   className?: string;
 }) {
   return (
@@ -90,7 +93,7 @@ export function ProductGrid({
       )}
     >
       {products.map((p, i) => (
-        <li key={p.id}>
+        <li key={p.id} style={transitionNames ? { viewTransitionName: `p-${p.id}` } : undefined}>
           <ProductCard product={p} currency={currency} lowStockUnder={lowStockUnder} index={numbered ? i : undefined} priority={i < priorityCount} />
         </li>
       ))}

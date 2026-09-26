@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { findCategory, ShopListing } from "@/components/store/shop-listing";
 import { getCategories, safely } from "@/lib/queries/catalog";
 
-// Prebuilt and cached like /shop. Sorted and paged views live in /shop-view.
+// Prebuilt and cached like /shop; sorting happens on the device.
 export const revalidate = 300;
 
 export async function generateStaticParams() {

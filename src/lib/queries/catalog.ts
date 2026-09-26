@@ -107,6 +107,21 @@ export const listProducts = unstable_cache(
   { tags: [TAGS.catalog, TAGS.stock], revalidate: 300 },
 );
 
+/**
+ * Every product in a category (or the whole shop), newest first, for the shop
+ * grid, which sorts and pages on the device. Fetched 60 at a time (the
+ * database's page limit), capped so a huge catalogue can't bloat the page.
+ */
+export async function listAllProducts(categoryId?: string, max = 240): Promise<ProductCard[]> {
+  const all: ProductCard[] = [];
+  for (let offset = 0; offset < max; offset += 60) {
+    const { products, total } = await listProducts({ categoryId, sort: "newest", limit: 60, offset });
+    all.push(...products);
+    if (products.length < 60 || all.length >= total) break;
+  }
+  return all.slice(0, max);
+}
+
 export const getProductBySlug = (slug: string) =>
   unstable_cache(
     async (): Promise<ProductDetail | null> => {
