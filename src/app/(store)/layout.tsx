@@ -98,12 +98,9 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
           <span>
             © {new Date().getFullYear()} {settings.store_name}
           </span>
-          <span className="flex gap-4">
-            <Link href="/delivery" className="hover:text-ink">
-              DELIVERY & RETURNS
-            </Link>
-            <span>{c.city}</span>
-          </span>
+          <Link href="/delivery" className="hover:text-ink">
+            DELIVERY & RETURNS
+          </Link>
         </div>
       </footer>
     </div>
