@@ -27,7 +27,7 @@ export default async function AboutPage() {
       </section>
 
       <section className="grid grid-cols-[repeat(auto-fit,minmax(290px,1fr))] items-start gap-12 px-[22px] py-[clamp(24px,4vw,48px)]">
-        <div className={image ? "relative aspect-[4/5] overflow-hidden rounded-[22px]" : "placeholder-stripes flex aspect-[4/5] items-end rounded-[22px] p-4"}>
+        <div className={image ? "relative aspect-[4/5] overflow-hidden rounded-[22px] bg-track" : "placeholder-stripes flex aspect-[4/5] items-end rounded-[22px] p-4"}>
           {image ? (
             <Image src={image} alt={`Inside the ${settings.store_name} studio`} fill sizes="(min-width: 640px) 50vw, 100vw" className="object-cover" />
           ) : (

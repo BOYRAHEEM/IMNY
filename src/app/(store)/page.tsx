@@ -49,7 +49,7 @@ export default async function HomePage() {
         <Link
           href="/shop"
           aria-label="Shop the drop"
-          className="relative flex min-h-[64vh] items-end overflow-hidden p-5 transition-transform duration-[320ms] ease-out hover:scale-[1.02] motion-reduce:hover:scale-100"
+          className="relative flex min-h-[64vh] items-end overflow-hidden bg-track p-5 transition-transform duration-[320ms] ease-out hover:scale-[1.02] motion-reduce:hover:scale-100"
         >
           {heroImage ? (
             <Image src={heroImage} alt="" fill priority sizes="(min-width: 640px) 50vw, 100vw" className="object-cover" />

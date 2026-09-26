@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Quality 60 looks the same as 75 on phone screens at about half the bytes.
+    qualities: [60],
     // Uploads are capped at 2400px on the long edge (1920px wide for a 4:5
     // photo), so the 2048/3840 defaults only bloat every srcset.
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],

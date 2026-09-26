@@ -291,7 +291,7 @@ function Gallery({ images, name, lowStock }: { images: ViewImage[]; name: string
             key={shot.id}
             className={cn(
               "relative flex aspect-[4/5] max-h-[52vh] w-full flex-[0_0_100%] snap-start items-end p-4 md:max-h-none",
-              "placeholder" in shot && (i % 2 ? "placeholder-stripes-alt" : "placeholder-stripes"),
+              "placeholder" in shot ? (i % 2 ? "placeholder-stripes-alt" : "placeholder-stripes") : "bg-track",
             )}
           >
             {"placeholder" in shot ? (

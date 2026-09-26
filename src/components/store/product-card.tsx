@@ -26,15 +26,16 @@ export function ProductCard({ product, currency, lowStockUnder, index, priority 
 
   return (
     <Link href={`/product/${product.slug}`} className="group block transition-colors duration-200 hover:text-violet">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-[14px] transition-[transform,box-shadow] sm:aspect-[4/5] sm:rounded-[18px] duration-[280ms] ease-out group-hover:-rotate-[0.6deg] group-hover:scale-[1.035] group-hover:shadow-[0_14px_30px_-14px_rgba(20,18,15,0.35)] motion-reduce:group-hover:transform-none">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-[14px] bg-track transition-[transform,box-shadow] sm:aspect-[4/5] sm:rounded-[18px] duration-[280ms] ease-out group-hover:-rotate-[0.6deg] group-hover:scale-[1.035] group-hover:shadow-[0_14px_30px_-14px_rgba(20,18,15,0.35)] motion-reduce:group-hover:transform-none">
         {image ? (
           <Image src={image} alt={product.image_alt || product.name} fill sizes={sizes} priority={priority} className="object-cover" />
         ) : (
           <div className="placeholder-stripes absolute inset-0" />
         )}
-        {/* Second shot fades in on hover (design's "alt shot"). */}
+        {/* Second shot fades in on hover (design's "alt shot"). Hidden on touch
+            screens, where it can't be seen, so phones don't download it. */}
         {hover ? (
-          <Image src={hover} alt="" fill sizes={sizes} className="object-cover opacity-0 transition-opacity duration-[240ms] group-hover:opacity-100" />
+          <Image src={hover} alt="" fill sizes={sizes} className="hidden object-cover opacity-0 transition-opacity duration-[240ms] group-hover:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:block" />
         ) : (
           !image && (
             <div className="placeholder-stripes-alt absolute inset-0 flex items-end p-3 opacity-0 transition-opacity duration-[240ms] group-hover:opacity-100">
