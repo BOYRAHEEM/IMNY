@@ -14,6 +14,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Tailwind's CSS is small (~12 KB compressed); shipping it inside the HTML
+    // saves a render-blocking request, which matters most on slow phone data.
+    inlineCss: true,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     // Uploads are capped at 2400px on the long edge (1920px wide for a 4:5
