@@ -38,9 +38,9 @@ export async function confirmPayment(reference: string): Promise<PaymentOutcome>
     const result = data as { ok: boolean; error?: string; order_id?: string; already_processed?: boolean; stock_committed?: boolean };
     revalidateTag(TAGS.stock, { expire: 0 });
     if (!result.ok) return result.error === "ORDER_NOT_FOUND" ? "not_found" : "review";
-    if (!result.already_processed && result.order_id) {
-      await sendOrderConfirmation(result.order_id);
-    }
+    // Also on repeats: the email is sent at most once, so this completes a
+    // send that an earlier run didn't finish.
+    if (result.order_id) await sendOrderConfirmation(result.order_id);
     return result.stock_committed === false ? "review" : "paid";
   }
 

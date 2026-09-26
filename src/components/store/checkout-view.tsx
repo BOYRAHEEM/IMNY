@@ -11,6 +11,7 @@ import { formatMoney } from "@/lib/money";
 import type { DeliveryZone } from "@/lib/queries/settings";
 import { GHANA_REGIONS } from "@/lib/validation/checkout";
 import { useCart, useHydrated } from "./cart-store";
+import { attemptKey, endAttempt } from "./checkout-attempt";
 import { readPrefs, writePrefs } from "./checkout-prefs";
 import { SummaryCard, SummaryRow, SummaryTotal, summaryButton } from "./summary-card";
 import { ui } from "./ui";
@@ -93,11 +94,21 @@ export function CheckoutView({ zones, currency, paymentFailed, testPayments }: P
   function submit(form: HTMLFormElement) {
     setFormError(null);
     setFieldErrors({});
-    const data = Object.fromEntries(new FormData(form).entries());
+    const details = { ...Object.fromEntries(new FormData(form).entries()), payment_method: effectiveMethod, discount_code: code ?? "" };
+    // Same details as a submit that got no answer → same key → no second order.
+    const key = attemptKey({ details, lines });
     startSubmit(async () => {
-      const result = await placeOrder({ ...data, payment_method: effectiveMethod, discount_code: code ?? "" }, lines);
+      let result;
+      try {
+        result = await placeOrder(details, lines, key);
+      } catch {
+        // No answer (connection dropped): keep the key so trying again is safe.
+        setFormError("we couldn't reach the shop. check your connection and try again. you won't be charged twice.");
+        return;
+      }
       // On success the action redirects (to the payment page, or the confirmation for cash).
       if (result && !result.ok) {
+        endAttempt();
         setFormError(result.error.toLowerCase());
         setFieldErrors(result.fieldErrors ?? {});
         const first = result.fieldErrors && Object.keys(result.fieldErrors)[0];

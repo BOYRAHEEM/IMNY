@@ -572,6 +572,32 @@ export type Database = {
           },
         ]
       }
+      order_emails: {
+        Row: {
+          kind: string
+          order_id: string
+          sent_at: string
+        }
+        Insert: {
+          kind: string
+          order_id: string
+          sent_at?: string
+        }
+        Update: {
+          kind?: string
+          order_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_emails_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_notes: {
         Row: {
           author_id: string | null
@@ -683,8 +709,10 @@ export type Database = {
           discount_minor: number
           email: string
           id: string
+          idempotency_key: string | null
           order_number: string
           paid_at: string | null
+          payment_authorization_url: string | null
           payment_method: string
           payment_provider: string
           payment_reference: string
@@ -722,8 +750,10 @@ export type Database = {
           discount_minor?: number
           email: string
           id?: string
+          idempotency_key?: string | null
           order_number: string
           paid_at?: string | null
+          payment_authorization_url?: string | null
           payment_method?: string
           payment_provider: string
           payment_reference: string
@@ -761,8 +791,10 @@ export type Database = {
           discount_minor?: number
           email?: string
           id?: string
+          idempotency_key?: string | null
           order_number?: string
           paid_at?: string | null
+          payment_authorization_url?: string | null
           payment_method?: string
           payment_provider?: string
           payment_reference?: string
@@ -1380,6 +1412,7 @@ export type Database = {
           p_delivery_zone_id: string
           p_discount_code: string
           p_items: Json
+          p_idempotency_key?: string
           p_payment_reference: string
           p_shipping: Json
         }
@@ -1391,6 +1424,7 @@ export type Database = {
           p_customer: Json
           p_delivery_zone_id: string
           p_discount_code: string
+          p_idempotency_key?: string
           p_items: Json
           p_payment_provider: string
           p_payment_reference: string

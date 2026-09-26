@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
+import { z } from "zod";
 import { TAGS } from "@/lib/cache-tags";
 import { cartLinesSchema, priceCart, type Quote } from "@/lib/checkout/quote";
 import { publicEnv } from "@/lib/env";
@@ -74,11 +75,30 @@ const INPUT_ERRORS: Record<string, string> = {
   ZONE_REGION_MISMATCH: "We couldn't work out delivery for that region. Please check your address.",
   COD_NOT_AVAILABLE: "Pay on delivery isn't available for that delivery area. Please choose mobile money or card.",
   GUEST_CHECKOUT_DISABLED: "Checkout is temporarily unavailable.",
+  IDEMPOTENCY_KEY_REUSED: "Please try again.",
 };
 
-export async function placeOrder(form: Record<string, unknown>, lines: unknown): Promise<PlaceOrderResult> {
+/** Lets the return page show this order's details in this browser. */
+async function rememberOrder(orderNumber: string, token: string) {
+  (await cookies()).set("imny_order", `${orderNumber}.${token}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+}
+
+/**
+ * `idempotencyKey` identifies one checkout attempt. Sending the same key again
+ * (double tap, lost response, retry) returns the order it already created
+ * instead of placing a second one.
+ */
+export async function placeOrder(form: Record<string, unknown>, lines: unknown, idempotencyKey: unknown): Promise<PlaceOrderResult> {
   const parsedLines = cartLinesSchema.safeParse(lines);
   if (!parsedLines.success) return { ok: false, error: "Your bag is empty or couldn't be read." };
+  const parsedKey = z.uuid().safeParse(idempotencyKey);
+  if (!parsedKey.success) return { ok: false, error: "Please refresh the page and try again." };
 
   const parsed = checkoutSchema.safeParse(form);
   if (!parsed.success) {
@@ -144,6 +164,7 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
     p_discount_code: f.discount_code as string,
     p_payment_reference: reference,
     p_access_token_hash: placeholder,
+    p_idempotency_key: parsedKey.data,
   };
   const { data, error } = cod
     ? await db.rpc("place_cod_order", common)
@@ -164,6 +185,10 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
     order_number?: string;
     total_minor?: number;
     currency?: string;
+    replayed?: boolean;
+    payment_method?: string;
+    payment_status?: string;
+    payment_authorization_url?: string | null;
   };
 
   if (!result.ok) {
@@ -179,6 +204,23 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
   const orderId = result.order_id!;
   const orderNumber = result.order_number!;
   const token = orderToken(orderId);
+  const confirmationUrl = (status: string) => `/order-confirmation?${new URLSearchParams({ order: orderNumber, token, status })}`;
+
+  if (result.replayed) {
+    // This attempt already placed its order: send the shopper where the first
+    // request would have, without touching stock or payment again.
+    if (result.payment_method === "cod") {
+      await sendOrderConfirmation(orderId); // no-op unless the first send didn't finish
+      redirect(confirmationUrl("cod"));
+    }
+    if (result.payment_status === "paid") redirect(confirmationUrl("paid"));
+    if (result.payment_status === "pending" && result.payment_authorization_url) {
+      await rememberOrder(orderNumber, token);
+      redirect(result.payment_authorization_url);
+    }
+    return { ok: false, error: "That payment didn't start. Please try again." };
+  }
+
   const { error: tokenError } = await db.from("orders").update({ access_token_hash: tokenHash(token) }).eq("id", orderId);
   if (tokenError) logError("placeOrder.token", tokenError);
 
@@ -187,7 +229,7 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
   if (cod) {
     // No payment step: the order is confirmed now and paid in cash on delivery.
     await sendOrderConfirmation(orderId);
-    redirect(`/order-confirmation?${new URLSearchParams({ order: orderNumber, token, status: "cod" })}`);
+    redirect(confirmationUrl("cod"));
   }
 
   let authorizationUrl: string;
@@ -210,14 +252,11 @@ export async function placeOrder(form: Record<string, unknown>, lines: unknown):
     return { ok: false, error: "We couldn't start the payment. You haven't been charged. Please try again." };
   }
 
-  // Lets the return page show this order's details in this browser.
-  (await cookies()).set("imny_order", `${orderNumber}.${token}`, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  // Kept so a repeat of this request can resume the same payment.
+  const { error: urlError } = await db.from("orders").update({ payment_authorization_url: authorizationUrl }).eq("id", orderId);
+  if (urlError) logError("placeOrder.authorizationUrl", urlError);
+
+  await rememberOrder(orderNumber, token);
 
   redirect(authorizationUrl);
 }

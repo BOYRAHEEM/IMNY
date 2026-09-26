@@ -10,10 +10,24 @@ type Kind = "confirmed" | "shipped";
 /**
  * Customer emails. "confirmed" is sent once payment is verified (or straight
  * away for pay-on-delivery); "shipped" when staff mark the order shipped.
+ * Each is sent at most once per order, so callers may call this freely.
  */
 async function sendOrderEmail(orderId: string, kind: Kind): Promise<void> {
+  const db = createServiceClient();
+  // Claim the send first. A second caller (retry, double click, webhook and
+  // return page together) finds the row already there and stops.
+  const { data: claimed, error: claimError } = await db
+    .from("order_emails")
+    .upsert({ order_id: orderId, kind }, { onConflict: "order_id,kind", ignoreDuplicates: true })
+    .select("order_id");
+  if (claimError) {
+    logError(`sendOrderEmail.${kind}.claim`, claimError);
+    return;
+  }
+  if (!claimed?.length) return;
+
+  let sent = false;
   try {
-    const db = createServiceClient();
     const [{ data: order }, { data: settings }] = await Promise.all([
       db
         .from("orders")
@@ -100,9 +114,22 @@ async function sendOrderEmail(orderId: string, kind: Kind): Promise<void> {
       `Track your order: ${link}`,
     ].join("\n");
 
-    await sendEmail({ to: o.email, subject, html, text, replyTo: settings?.contact_email });
+    ({ sent } = await sendEmail({
+      to: o.email,
+      subject,
+      html,
+      text,
+      replyTo: settings?.contact_email,
+      idempotencyKey: `order-${kind}/${orderId}`,
+    }));
   } catch (err) {
     logError(`sendOrderEmail.${kind}`, err);
+  } finally {
+    if (!sent) {
+      // Release the claim so a later retry can send it.
+      const { error } = await db.from("order_emails").delete().eq("order_id", orderId).eq("kind", kind);
+      if (error) logError(`sendOrderEmail.${kind}.release`, error);
+    }
   }
 }
 

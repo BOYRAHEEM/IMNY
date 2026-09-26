@@ -5,7 +5,15 @@ import { logError } from "@/lib/errors";
  * Transactional email via Resend's HTTP API. If email isn't configured the
  * message is skipped and logged, so checkout never fails because of email.
  */
-export async function sendEmail(msg: { to: string; subject: string; html: string; text: string; replyTo?: string | null }) {
+export async function sendEmail(msg: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string | null;
+  /** Resend ignores a repeat of the same key for 24 hours. */
+  idempotencyKey?: string;
+}) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!key || !from) {
@@ -15,7 +23,11 @@ export async function sendEmail(msg: { to: string; subject: string; html: string
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        ...(msg.idempotencyKey ? { "Idempotency-Key": msg.idempotencyKey } : {}),
+      },
       body: JSON.stringify({
         from,
         to: [msg.to],
