@@ -18,9 +18,7 @@ const base: OrderEmailData = {
   discountMinor: 0,
   totalMinor: 248000,
   cashDue: false,
-  items: [
-    { name: "Soft Pink IMNY Joggers", variant: "Pink / S", quantity: 2, lineTotalMinor: 240000, imageUrl: "https://example.com/joggers.webp" },
-  ],
+  itemCount: 2,
 };
 
 describe("order emails", () => {
@@ -30,6 +28,12 @@ describe("order emails", () => {
     expect(html).toContain("you ate that, Ama");
     expect(text).toContain("you ate that, Ama");
     expect(text).toContain(base.trackUrl);
+  });
+
+  it("leaves out the individual items", () => {
+    const { html } = renderOrderEmail(base);
+    expect(html).not.toContain("<img");
+    expect(html).toContain(">2<");
   });
 
   it("only mentions cash when payment is due on delivery", () => {
@@ -56,7 +60,7 @@ describe("order emails", () => {
   it.runIf(process.env.EMAIL_PREVIEW_DIR)("writes previews", () => {
     const dir = process.env.EMAIL_PREVIEW_DIR!;
     writeFileSync(join(dir, "email-confirmed.html"), renderOrderEmail(base).html);
-    writeFileSync(join(dir, "email-cod.html"), renderOrderEmail({ ...base, cashDue: true, items: [...base.items, { ...base.items[0], name: "Ash Hoodie", variant: null, quantity: 1, imageUrl: null }] }).html);
+    writeFileSync(join(dir, "email-cod.html"), renderOrderEmail({ ...base, cashDue: true, itemCount: 3 }).html);
     writeFileSync(join(dir, "email-shipped.html"), renderOrderEmail({ ...base, kind: "shipped" }).html);
   });
 });

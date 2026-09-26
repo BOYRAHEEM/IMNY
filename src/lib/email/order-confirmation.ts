@@ -2,7 +2,6 @@ import "server-only";
 import { logError } from "@/lib/errors";
 import { orderUrl } from "@/lib/order-links";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { catalogImageUrl } from "@/lib/images";
 import { renderOrderEmail, type OrderEmailKind } from "./order-template";
 import { sendEmail } from "./send";
 
@@ -33,7 +32,7 @@ async function sendOrderEmail(orderId: string, kind: OrderEmailKind): Promise<vo
         .select(
           "id, order_number, email, shipping_name, shipping_line1, shipping_line2, shipping_city, shipping_region, delivery_zone_name, " +
             "currency, subtotal_minor, delivery_fee_minor, discount_minor, total_minor, payment_method, payment_status, " +
-            "items:order_items(product_name, variant_title, quantity, line_total_minor, image_path)",
+            "items:order_items(quantity)",
         )
         .eq("id", orderId)
         .single(),
@@ -57,7 +56,7 @@ async function sendOrderEmail(orderId: string, kind: OrderEmailKind): Promise<vo
       total_minor: number;
       payment_method: string;
       payment_status: string;
-      items: { product_name: string; variant_title: string | null; quantity: number; line_total_minor: number; image_path: string | null }[];
+      items: { quantity: number }[];
     };
 
     const { subject, html, text } = renderOrderEmail({
@@ -75,13 +74,7 @@ async function sendOrderEmail(orderId: string, kind: OrderEmailKind): Promise<vo
       discountMinor: o.discount_minor,
       totalMinor: o.total_minor,
       cashDue: o.payment_method === "cod" && o.payment_status !== "paid",
-      items: o.items.map((i) => ({
-        name: i.product_name,
-        variant: i.variant_title,
-        quantity: i.quantity,
-        lineTotalMinor: i.line_total_minor,
-        imageUrl: catalogImageUrl(i.image_path),
-      })),
+      itemCount: o.items.reduce((n, i) => n + i.quantity, 0),
     });
 
     ({ sent } = await sendEmail({
