@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/auth";
 import { TAGS } from "@/lib/cache-tags";
 import { failure, logError, type ActionResult } from "@/lib/errors";
 import { CATALOG_BUCKET } from "@/lib/images";
+import { warmImages } from "@/lib/images-warm";
 import { createClient } from "@/lib/supabase/server";
 import { productPayloadSchema } from "@/lib/validation/product";
 
@@ -47,6 +48,9 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ id: st
   }
 
   expireProductCaches(p.slug, existing?.slug);
+  // Pre-size newly added photos so the first shopper doesn't wait for resizing.
+  const had = new Set((oldImages ?? []).map((i) => i.storage_path));
+  warmImages(p.images.map((i) => i.storage_path).filter((path) => !had.has(path)));
   return { ok: true, data: { id: p.id }, message: p.status === "active" ? "Product saved and published." : "Product saved." };
 }
 

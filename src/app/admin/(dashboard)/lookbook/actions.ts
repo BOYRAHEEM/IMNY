@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/auth";
 import { TAGS } from "@/lib/cache-tags";
 import { failure, logError, type ActionResult } from "@/lib/errors";
 import { CATALOG_BUCKET } from "@/lib/images";
+import { warmImages } from "@/lib/images-warm";
 import { createClient } from "@/lib/supabase/server";
 
 async function guard(ctx: string) {
@@ -39,6 +40,7 @@ export async function addLookbookImages(images: unknown): Promise<ActionResult> 
   const start = (last?.[0]?.position ?? -1) + 1;
   const { error } = await supabase.from("lookbook_images").insert(parsed.data.map((img, i) => ({ ...img, position: start + i })));
   if (error) return failure("addLookbookImages", error);
+  warmImages(parsed.data.map((img) => img.storage_path));
   updateTag(TAGS.settings);
   refresh();
   return { ok: true, data: undefined };

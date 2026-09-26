@@ -8,6 +8,7 @@ import { requireStaff } from "@/lib/auth";
 import { TAGS } from "@/lib/cache-tags";
 import { failure, logError, type ActionResult } from "@/lib/errors";
 import { CATALOG_BUCKET } from "@/lib/images";
+import { warmImages } from "@/lib/images-warm";
 import { parseMoneyInput } from "@/lib/money";
 import { GHANA_REGIONS } from "@/lib/validation/checkout";
 import { createClient } from "@/lib/supabase/server";
@@ -235,6 +236,7 @@ export async function saveSiteImage(field: string, path: string | null): Promise
     const { error: rmError } = await supabase.storage.from(CATALOG_BUCKET).remove([old]);
     if (rmError) logError("saveSiteImage.remove", rmError);
   }
+  warmImages([parsed.data.path], { large: true });
   updateTag(TAGS.settings);
   refresh();
   return { ok: true, data: undefined, message: parsed.data.path ? "Image updated." : "Image removed." };
