@@ -6,22 +6,29 @@ import { getStoreSettings } from "@/lib/queries/settings";
 import { ui } from "./ui";
 
 const PAGE_SIZE = 24;
+export const MAX_PAGE = 100;
 const SORTS = [
   { key: "newest", label: "newest" },
   { key: "price_asc", label: "price ↑" },
   { key: "price_desc", label: "price ↓" },
 ] as const;
-type SortKey = (typeof SORTS)[number]["key"];
+export type SortKey = (typeof SORTS)[number]["key"];
 
-export async function ShopListing({
-  category,
-  searchParams,
-}: {
-  category: Category | null;
-  searchParams: Record<string, string | string[] | undefined>;
-}) {
-  const sort: SortKey = SORTS.some((s) => s.key === searchParams.sort) ? (searchParams.sort as SortKey) : "newest";
-  const page = Math.min(100, Math.max(1, Number(searchParams.page) || 1));
+export function isSortKey(value: string): value is SortKey {
+  return SORTS.some((s) => s.key === value);
+}
+
+export async function findCategory(slug: string): Promise<Category | null> {
+  const categories = await safely("category.lookup", getCategories, []);
+  return categories.find((c) => c.slug === slug) ?? null;
+}
+
+/**
+ * The shop grid. Takes sort and page as props (not searchParams) so the
+ * default views can be prebuilt and cached; `?sort=` / `?page=` URLs are
+ * rewritten to the cached /shop-view route in next.config.ts.
+ */
+export async function ShopListing({ category, sort = "newest", page = 1 }: { category: Category | null; sort?: SortKey; page?: number }) {
   const basePath = category ? `/shop/${category.slug}` : "/shop";
 
   const [settings, categories, result] = await Promise.all([

@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ShopListing } from "@/components/store/shop-listing";
+import { findCategory, ShopListing } from "@/components/store/shop-listing";
 import { getCategories, safely } from "@/lib/queries/catalog";
 
-async function findCategory(slug: string) {
-  const categories = await safely("category.lookup", getCategories, []);
-  return categories.find((c) => c.slug === slug) ?? null;
+// Prebuilt and cached like /shop. Sorted and paged views live in /shop-view.
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const categories = await safely("category.staticParams", getCategories, []);
+  return categories.map((c) => ({ category: c.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/shop/[category]">): Promise<Metadata> {
@@ -18,8 +21,8 @@ export async function generateMetadata({ params }: PageProps<"/shop/[category]">
   };
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps<"/shop/[category]">) {
+export default async function CategoryPage({ params }: PageProps<"/shop/[category]">) {
   const category = await findCategory((await params).category);
   if (!category) notFound();
-  return <ShopListing category={category} searchParams={await searchParams} />;
+  return <ShopListing category={category} />;
 }

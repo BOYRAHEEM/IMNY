@@ -32,6 +32,19 @@ const nextConfig: NextConfig = {
       ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/catalog/**" }]
       : [],
   },
+  // Sorted and paged shop views go to a cached route, so /shop and category
+  // pages can stay prebuilt (reading ?sort= in a page would make it render
+  // on every visit). Shoppers keep seeing the /shop?sort=… URL.
+  async rewrites() {
+    const sort = { type: "query" as const, key: "sort", value: "(?<sort>newest|price_asc|price_desc)" };
+    const page = { type: "query" as const, key: "page", value: "(?<page>[1-9][0-9]{0,2})" };
+    const views = (source: string, category: string) => [
+      { source, has: [sort, page], destination: `/shop-view/${category}/:sort/:page` },
+      { source, has: [sort], destination: `/shop-view/${category}/:sort/1` },
+      { source, has: [page], destination: `/shop-view/${category}/newest/:page` },
+    ];
+    return { beforeFiles: [...views("/shop", "_all"), ...views("/shop/:category", ":category")], afterFiles: [], fallback: [] };
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
