@@ -66,11 +66,11 @@ async function loadOrder(orderNumber: string, token: string): Promise<Order | nu
 }
 
 /** Headline and message for a placed order: one until it's delivered, another after. */
-function placedCopy(status: string, cash: string): { heading: string; sub: string } {
+function placedCopy(status: string, cash: string, firstName: string): { heading: string; sub: string } {
   if (status === "delivered") {
     return { heading: "the fit has landed", sub: "delivered · now go serve looks. thanks for rocking IMNY, see you at the next drop." };
   }
-  return { heading: "you ate that", sub: `order confirmed.${cash} we'll email you when it's on the way.` };
+  return { heading: firstName ? `you ate that, ${firstName}` : "you ate that", sub: `order confirmed.${cash} we'll email you when it's on the way.` };
 }
 
 function Badge() {
@@ -120,7 +120,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps<
   const step = STEPS.findIndex((s) => s.key === order.status);
 
   const cash = cod && !paid ? ` keep ${money(order.total_minor)} in cash ready for the rider.` : "";
-  const progress = placed ? placedCopy(order.status, cash) : null;
+  const progress = placed ? placedCopy(order.status, cash, order.shipping_name.trim().split(/\s+/)[0] ?? "") : null;
 
   const heading = cancelled
     ? "this order was cancelled"
