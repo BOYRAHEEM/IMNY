@@ -20,6 +20,57 @@ type Props = {
   badges: string[];
 };
 
+/** Same shape as the loaded bag, so nothing jumps when the real items arrive. */
+function BagSkeleton({ lines }: { lines: number }) {
+  const bar = "rounded-full bg-track";
+  return (
+    <div role="status" className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] items-start gap-[clamp(24px,4vw,44px)]">
+      <span className="sr-only">loading your bag…</span>
+      <div aria-hidden className="grid min-w-0 gap-3.5">
+        {Array.from({ length: Math.min(Math.max(lines, 1), 4) }, (_, i) => (
+          <div
+            key={i}
+            className="flex items-stretch gap-4 rounded-[20px] border border-rule-card p-3.5 animate-pulse"
+            style={{ animationDelay: `${i * 150}ms` }}
+          >
+            <div className="aspect-[4/5] w-[92px] shrink-0 rounded-xl bg-track" />
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 py-0.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="grid flex-1 gap-2">
+                  <span className={cn(bar, "h-3 w-[70%]")} />
+                  <span className={cn(bar, "h-2.5 w-[40%]")} />
+                </div>
+                <span className={cn(bar, "h-3 w-14")} />
+              </div>
+              <div className="flex items-center justify-between gap-2.5">
+                <span className="h-11 w-[108px] rounded-full border border-rule-card sm:h-10" />
+                <span className={cn(bar, "h-2.5 w-12")} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div aria-hidden className="grid gap-6 rounded-3xl border border-rule-soft bg-bone p-[clamp(24px,3.2vw,36px)] shadow-[0_20px_40px_-28px_rgba(20,18,15,0.18)] animate-pulse">
+        <span className={cn(bar, "h-3 w-28")} />
+        <span className={cn(bar, "h-[5px] w-full")} />
+        <div className="grid gap-3.5 border-t border-rule-soft pt-5">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex justify-between">
+              <span className={cn(bar, "h-3 w-20")} />
+              <span className={cn(bar, "h-3 w-16")} />
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between border-t border-rule-soft pt-5">
+          <span className={cn(bar, "h-3 w-12")} />
+          <span className={cn(bar, "h-7 w-32")} />
+        </div>
+        <span className="h-[54px] rounded-[14px] bg-track" />
+      </div>
+    </div>
+  );
+}
+
 export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor, flatDelivery, badges }: Props) {
   const lines = useCart();
   const count = useCartCount();
@@ -39,9 +90,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
     return (
       <section className={ui.section("grid gap-[clamp(24px,4vw,44px)]")}>
         {header}
-        <p className="flex items-center gap-2 font-mono text-xs text-label">
-          <Spinner /> loading your bag…
-        </p>
+        <BagSkeleton lines={hydrated ? lines.length : 2} />
       </section>
     );
   }
