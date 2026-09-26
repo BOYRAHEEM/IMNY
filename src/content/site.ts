@@ -6,7 +6,6 @@
 export const DEFAULT_CONTENT = {
   est_label: "EST '26",
   city: "ACCRA",
-  splash_badge: "AW26 · OUT NOW",
   hero_badges: "AW26 | DELIVERY ONE | 60 UNITS PER COLOUR",
   hero_heading: "main character energy, all day",
   hero_text: "womenswear cut heavy and worn loose. joggers, shorts and the odd tee, made in tiny runs and gone when they're gone.",
@@ -62,7 +61,6 @@ export const CONTENT_FIELDS: { key: ContentKey; label: string; hint?: string; lo
   { key: "hero_badges", label: "Homepage tags", hint: "Separate with |", group: "Homepage" },
   { key: "hero_sticker", label: "Photo sticker", group: "Homepage" },
   { key: "featured_heading", label: "Featured heading", group: "Homepage" },
-  { key: "splash_badge", label: "Welcome screen badge", hint: "Use · for a line break", group: "Homepage" },
   { key: "est_label", label: "Logo caption", group: "Brand" },
   { key: "city", label: "City in footer", group: "Brand" },
   { key: "newsletter_heading", label: "Newsletter heading", group: "Brand" },

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { subscribeNewsletter } from "@/app/(store)/actions";
 import { cn } from "@/lib/cn";
 import { useCartCount } from "./cart-store";
@@ -116,93 +116,6 @@ function Newsletter({ heading }: { heading: string }) {
         )}
       </div>
     </form>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Welcome screen: once per session, home page only
-// ---------------------------------------------------------------------------
-const ENTERED_KEY = "imny-entered";
-const noop = () => () => {};
-
-/** Lives in the store layout (outside the page-fade wrapper) so it stacks above the header; shows on the home page only. */
-export function WelcomeGate({ badge, est }: { badge: string; est: string }) {
-  const pathname = usePathname();
-  // Server and hydration render the gate; CSS hides it instantly if already entered.
-  const alreadyEntered = useSyncExternalStore(
-    noop,
-    () => {
-      try {
-        return sessionStorage.getItem(ENTERED_KEY) === "1";
-      } catch {
-        return true;
-      }
-    },
-    () => false,
-  );
-  const [leaving, setLeaving] = useState(false);
-  const [gone, setGone] = useState(false);
-  const button = useRef<HTMLButtonElement>(null);
-
-  const visible = !alreadyEntered && !gone && pathname === "/";
-
-  useEffect(() => {
-    if (!visible) return;
-    button.current?.focus();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [visible]);
-
-  if (!visible) return null;
-
-  function enter() {
-    try {
-      sessionStorage.setItem(ENTERED_KEY, "1");
-    } catch {}
-    document.documentElement.dataset.imnyEntered = "1";
-    setLeaving(true);
-    setTimeout(() => setGone(true), 440);
-  }
-
-  const [line1, line2] = badge.split("·").map((s) => s.trim());
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Welcome"
-      onKeyDown={(e) => e.key === "Escape" && enter()}
-      className={cn(
-        "imny-gate fixed inset-0 z-[900] flex flex-col items-center justify-center gap-[30px] overflow-hidden bg-bone transition-opacity duration-[450ms]",
-        leaving && "opacity-0",
-      )}
-    >
-      <div
-        aria-hidden
-        className="absolute top-[8%] right-[6%] flex size-[116px] animate-spin-slow items-center justify-center rounded-full bg-lime text-center font-mono text-[10px] leading-normal font-semibold tracking-[0.18em]"
-      >
-        {line1}
-        {line2 && (
-          <>
-            <br />
-            {line2}
-          </>
-        )}
-      </div>
-      <p className="m-0 text-[clamp(66px,19vw,260px)] leading-[0.78] font-bold tracking-[-0.08em]">IMNY</p>
-      <p className="m-0 font-mono text-[11px] tracking-[0.3em] text-label">{est}</p>
-      <button
-        ref={button}
-        type="button"
-        onClick={enter}
-        className="mt-3.5 inline-flex items-center justify-center rounded-full bg-ink px-[58px] py-5 font-mono text-[13px] font-semibold tracking-[0.3em] whitespace-nowrap text-bone transition duration-150 hover:scale-105 hover:bg-violet"
-      >
-        ENTER →
-      </button>
-    </div>
   );
 }
 

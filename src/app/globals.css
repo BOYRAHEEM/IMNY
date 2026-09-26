@@ -161,11 +161,6 @@ html:has(.imny-admin) body {
   color: var(--color-ink);
 }
 
-/* Welcome screen: hidden instantly for visitors who already entered this session. */
-html[data-imny-entered] .imny-gate {
-  display: none;
-}
-
 /* Custom cursor only for mouse users. */
 @media not all and (hover: hover) and (pointer: fine) {
   .imny-cursor {

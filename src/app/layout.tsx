@@ -18,9 +18,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // suppressHydrationWarning: a tiny pre-paint script sets data-imny-entered
-    // on <html> (hides the welcome screen for returning visitors).
-    <html lang="en" className={`${poppins.variable} ${plexMono.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${poppins.variable} ${plexMono.variable} antialiased`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

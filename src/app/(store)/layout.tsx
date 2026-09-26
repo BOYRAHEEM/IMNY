@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BagPill, CustomCursor, FooterSections, NavPills, WelcomeGate } from "@/components/store/chrome";
+import { BagPill, CustomCursor, FooterSections, NavPills } from "@/components/store/chrome";
 import { splitList } from "@/content/site";
 import { getStoreSettings } from "@/lib/queries/settings";
 
@@ -22,10 +22,6 @@ const NAV = [
   { href: "/contact", label: "contact" },
 ];
 
-// Runs before first paint: hides the welcome screen for visitors who already
-// entered this session, so it never flashes.
-const GATE_SCRIPT = `try{if(sessionStorage.getItem("imny-entered")==="1")document.documentElement.setAttribute("data-imny-entered","1")}catch(e){}`;
-
 export default async function StoreLayout({ children }: LayoutProps<"/">) {
   const settings = await getStoreSettings();
   const c = settings.content;
@@ -39,8 +35,6 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="imny flex min-h-dvh flex-col">
-      <script dangerouslySetInnerHTML={{ __html: GATE_SCRIPT }} />
-      <WelcomeGate badge={c.splash_badge} est={c.est_label} />
       <CustomCursor />
       <a
         href="#main"
