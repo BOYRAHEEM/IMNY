@@ -10,10 +10,14 @@ import { getStoreSettings } from "@/lib/queries/settings";
 
 export const revalidate = 300;
 
-// Pages are built on first visit, then cached and refreshed when the admin
-// edits the product (cache tags) or every 5 minutes for stock.
+// Current products are built during the deploy, so no shopper waits for a
+// first render; newer ones are built on first visit. All are then cached and
+// refreshed when the admin edits the product (cache tags) or every 5 minutes
+// for stock. If the database can't be reached at build time, fall back to
+// building every page on first visit rather than failing the deploy.
 export async function generateStaticParams() {
-  return [];
+  const { products } = await safely("product.staticParams", () => listProducts({ limit: 100 }), { products: [], total: 0 });
+  return products.map((p) => ({ slug: p.slug }));
 }
 
 async function load(slug: string) {

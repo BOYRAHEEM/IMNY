@@ -302,6 +302,10 @@ function Gallery({ images, name, lowStock }: { images: ViewImage[]; name: string
                 alt={shot.alt}
                 fill
                 priority={i === 0}
+                // The next shot loads early but after everything important,
+                // so swiping to it never shows an empty frame.
+                loading={i === 1 ? "eager" : undefined}
+                fetchPriority={i === 1 ? "low" : undefined}
                 sizes="(min-width: 560px) 520px, 100vw"
                 className="object-cover"
               />
