@@ -71,8 +71,8 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
     <section className={ui.section("grid gap-[clamp(24px,4vw,44px)]")}>
       {header}
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-[clamp(24px,4vw,44px)]">
-        <div className="grid gap-3.5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] items-start gap-[clamp(24px,4vw,44px)]">
+        <div className="grid min-w-0 gap-3.5">
           {error && (
             <p role="alert" className="m-0 rounded-[20px] border border-bad/30 px-4 py-3 font-mono text-xs text-bad">
               {error}
@@ -95,7 +95,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       {href ? (
                         <Link href={href} className="block font-mono text-xs font-semibold tracking-[0.04em] uppercase">
                           {line.product_name}
@@ -108,7 +108,7 @@ export function BagView({ maxQuantity, currency, freeOverMinor, deliveryFeeMinor
                           aria-label={`Change size or colour for ${line.product_name}`}
                           value={line.variant_id}
                           onChange={(e) => cart.replace(line.variant_id, e.target.value)}
-                          className="mt-1.5 max-w-full cursor-pointer border-0 border-b border-rule bg-transparent py-0.5 font-mono text-[11px] text-label focus:border-ink focus:outline-none"
+                          className="mt-1.5 w-full max-w-[220px] cursor-pointer border-0 border-b border-rule bg-transparent py-0.5 font-mono text-[11px] text-label focus:border-ink focus:outline-none"
                         >
                           {line.choices.map((c) => (
                             <option key={c.variant_id} value={c.variant_id} disabled={c.available <= 0 && c.variant_id !== line.variant_id}>
