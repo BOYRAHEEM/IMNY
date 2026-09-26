@@ -21,7 +21,7 @@ export const DEFAULT_CONTENT = {
   delivery_coverage: "all of ghana",
   returns_policy: "14 days on anything unworn, with tags on.",
   returns_badge: "14-day returns",
-  newsletter_heading: "get the drop first",
+  newsletter_heading: "get the next drop first",
 } as const;
 
 export type ContentKey = keyof typeof DEFAULT_CONTENT;
