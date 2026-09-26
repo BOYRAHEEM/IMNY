@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { z } from "zod";
 import { Icon } from "@/components/admin/icons";
-import { PageHeader, Panel } from "@/components/admin/page-header";
+import { PageHeader, Panel, filterTab } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { requireStaffPage } from "@/lib/auth";
 import { logError } from "@/lib/errors";
@@ -14,6 +14,15 @@ import { AddTeamMemberForm, RefreshStoreForm, SettingsForm, TeamRoleForm, ZoneFo
 import { ContentForm, SiteImageField } from "./site-forms";
 
 export const metadata = { title: "Settings" };
+
+const SECTIONS = [
+  { id: "store", label: "Store" },
+  { id: "photos", label: "Photos" },
+  { id: "page-text", label: "Page text" },
+  { id: "delivery", label: "Delivery" },
+  { id: "team", label: "Team" },
+  { id: "storefront", label: "Storefront" },
+];
 
 export default async function SettingsPage({ searchParams }: PageProps<"/admin/settings">) {
   const user = await requireStaffPage({ adminOnly: true });
@@ -43,13 +52,26 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
     <>
       <PageHeader title="Settings" description="Store details, delivery fees and who can access this dashboard." />
 
+      {/* Section shortcuts: this page is long, especially on a phone. */}
+      <nav aria-label="Settings sections" className="no-scrollbar sticky top-16 z-20 -mx-4 mb-4 overflow-x-auto bg-bone/90 px-4 py-2 backdrop-blur-md lg:top-0">
+        <ul className="flex gap-1.5">
+          {SECTIONS.map((sec) => (
+            <li key={sec.id}>
+              <a href={`#${sec.id}`} className={filterTab(false)}>
+                {sec.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
       <div className="space-y-6">
         {settings ? (
           <>
-            <Panel title="Store">
+            <Panel title="Store" id="store">
               <SettingsForm s={settings} />
             </Panel>
-            <Panel title="Homepage & about photos">
+            <Panel title="Homepage & about photos" id="photos">
               <div className="grid gap-6 p-4 sm:grid-cols-2 sm:p-5">
                 <SiteImageField
                   field="hero_image_path"
@@ -67,7 +89,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
                 />
               </div>
             </Panel>
-            <Panel title="Page text">
+            <Panel title="Page text" id="page-text">
               <ContentForm content={resolveContent(settingsRow?.content)} />
             </Panel>
           </>
@@ -77,7 +99,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           </p>
         )}
 
-        <section id="delivery" className="scroll-mt-20">
+        <section id="delivery" className="scroll-mt-32 lg:scroll-mt-20">
           <Panel
             title="Delivery zones"
             action={
@@ -144,7 +166,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           </Panel>
         </section>
 
-        <Panel title="Team">
+        <Panel title="Team" id="team">
           <div className="space-y-4 p-4 sm:p-5">
             <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
               {team.map((m) => (
@@ -168,7 +190,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           </div>
         </Panel>
 
-        <Panel title="Storefront">
+        <Panel title="Storefront" id="storefront">
           <div className="p-4 sm:p-5">
             <RefreshStoreForm />
           </div>

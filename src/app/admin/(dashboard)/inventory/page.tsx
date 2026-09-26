@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/admin/icons";
 import { PageHeader, filterTab } from "@/components/admin/page-header";
+import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/form";
@@ -17,6 +18,17 @@ const FILTERS = [
   { key: "low", label: "Low stock" },
   { key: "out", label: "Sold out" },
 ] as const;
+
+/** Consecutive rows of the same product, so its name is shown once. */
+function groupByProduct(rows: StockRowData[]) {
+  const groups: { product_id: string; product_name: string; product_status: string; rows: StockRowData[] }[] = [];
+  for (const row of rows) {
+    const last = groups.at(-1);
+    if (last?.product_id === row.product_id) last.rows.push(row);
+    else groups.push({ product_id: row.product_id, product_name: row.product_name, product_status: row.product_status, rows: [row] });
+  }
+  return groups;
+}
 
 export default async function InventoryPage({ searchParams }: PageProps<"/admin/inventory">) {
   await requireStaffPage();
@@ -90,16 +102,26 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       ) : (
         <div className="overflow-hidden rounded-3xl border border-line bg-paper">
           <div className="hidden grid-cols-[minmax(0,1fr)_90px_90px_220px] gap-x-4 border-b border-line px-4 py-2 text-xs font-medium text-muted md:grid">
-            <span>Product</span>
+            <span>Size / colour</span>
             <span>Available</span>
             <span>Held</span>
             <span>On hand</span>
           </div>
-          <ul className="divide-y divide-line">
-            {rows.map((row) => (
-              <StockRow key={`${row.variant_id}-${row.on_hand}`} row={row} />
-            ))}
-          </ul>
+          {groupByProduct(rows).map((group) => (
+            <section key={group.product_id} aria-label={group.product_name} className="border-b border-line last:border-b-0">
+              <div className="flex items-center justify-between gap-3 bg-mist/60 px-4 py-2.5">
+                <Link href={`/admin/products/${group.product_id}`} className="truncate text-sm font-semibold hover:underline">
+                  {group.product_name}
+                </Link>
+                {group.product_status === "draft" && <Badge>Draft</Badge>}
+              </div>
+              <ul className="divide-y divide-line">
+                {group.rows.map((row) => (
+                  <StockRow key={`${row.variant_id}-${row.on_hand}`} row={row} />
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       )}
 

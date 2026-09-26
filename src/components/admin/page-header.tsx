@@ -37,9 +37,22 @@ export function PageHeader({
 }
 
 /** White content panel used across admin pages. */
-export function Panel({ title, action, children, className }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Panel({
+  title,
+  action,
+  children,
+  className,
+  id,
+}: {
+  title?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  /** Anchor to jump to; clears the sticky phone header and section bar. */
+  id?: string;
+}) {
   return (
-    <section className={cn("overflow-hidden rounded-3xl border border-line bg-paper", className)}>
+    <section id={id} className={cn("overflow-hidden rounded-3xl border border-line bg-paper", id && "scroll-mt-32 lg:scroll-mt-20", className)}>
       {title && (
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3.5 sm:px-5">
           <h2 className="font-mono text-[11px] font-semibold tracking-[0.18em] text-label uppercase">{title}</h2>

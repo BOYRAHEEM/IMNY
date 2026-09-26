@@ -150,7 +150,8 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
           </Panel>
         </div>
 
-        <div className="space-y-6">
+        {/* Phones: the panels you act on (status, customer, payment) come first. */}
+        <div className="order-first space-y-6 lg:order-none">
           <Panel title="Fulfilment">
             <StatusPanel
               orderId={order.id}
