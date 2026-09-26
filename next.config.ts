@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    // Uploads are capped at 2400px on the long edge (1920px wide for a 4:5
+    // photo), so the 2048/3840 defaults only bloat every srcset.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // Every upload gets a new file name, so an optimised image never goes stale.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: supabaseHost
       ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/catalog/**" }]
       : [],

@@ -106,7 +106,7 @@ export async function ShopListing({
         </div>
       ) : (
         <>
-          <ProductGrid products={result.products} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} numbered priorityCount={4} />
+          <ProductGrid products={result.products} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} numbered priorityCount={2} />
           {pages > 1 && (
             <nav aria-label="Pagination" className="mt-14 flex items-center justify-center gap-3">
               {page > 1 && (

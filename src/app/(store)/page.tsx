@@ -76,7 +76,7 @@ export default async function HomePage() {
           </Link>
         </div>
         {hits.length ? (
-          <ProductGrid products={hits} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} priorityCount={2} />
+          <ProductGrid products={hits} currency={settings.currency} lowStockUnder={settings.low_stock_badge_threshold} />
         ) : (
           <p className="font-mono text-xs tracking-[0.1em] text-label">the first drop is on its way.</p>
         )}
