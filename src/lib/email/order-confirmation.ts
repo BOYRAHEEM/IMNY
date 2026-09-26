@@ -54,15 +54,12 @@ async function sendOrderEmail(orderId: string, kind: Kind): Promise<void> {
     const cashDue = o.payment_method === "cod" && o.payment_status !== "paid";
     const e = escapeHtml;
 
-    const headline = kind === "shipped" ? `It's on the way, ${firstName}.` : `It's yours now, ${firstName}.`;
+    const headline = kind === "shipped" ? `It's on the way, ${firstName}.` : `You ate that, ${firstName}.`;
     const intro =
       kind === "shipped"
         ? `Order <strong>${e(o.order_number)}</strong> has left the studio and is on its way to you.${cashDue ? ` Please have <strong>${money(o.total_minor)}</strong> in cash ready for the rider.` : ""}`
-        : cashDue
-          ? `We've got order <strong>${e(o.order_number)}</strong> and we're packing it up. You'll pay <strong>${money(o.total_minor)}</strong> in cash when it arrives.`
-          : `We've received your payment for order <strong>${e(o.order_number)}</strong> and we're packing it up.`;
-    const subject =
-      kind === "shipped" ? `Order ${o.order_number} is on the way` : cashDue ? `Order ${o.order_number} received` : `Order ${o.order_number} confirmed`;
+        : `Order <strong>${e(o.order_number)}</strong> confirmed.${cashDue ? ` Keep <strong>${money(o.total_minor)}</strong> in cash ready for the rider.` : ""} We'll email you when it's on the way.`;
+    const subject = kind === "shipped" ? `Order ${o.order_number} is on the way` : `Order ${o.order_number} confirmed`;
 
     const rows = o.items
       .map(
